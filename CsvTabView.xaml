@@ -1,0 +1,436 @@
+<UserControl x:Class="CsvViewer.CsvTabView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CsvViewer"
+        mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <local:BindingProxy x:Key="vm" Data="{Binding}"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="FilterBox" TargetType="TextBox">
+            <Setter Property="Margin" Value="0,3,0,2"/>
+            <Setter Property="Padding" Value="3,2"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Background" Value="#FEFCF8"/>
+            <Setter Property="BorderBrush" Value="#B0BEC5"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="HeaderLabel" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="2,3,2,0"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+
+        <Style x:Key="SyntaxBtn" TargetType="Button">
+            <Setter Property="Padding" Value="7,3"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="Background" Value="#E3F2FD"/>
+            <Setter Property="BorderBrush" Value="#90CAF9"/>
+            <Setter Property="Foreground" Value="#0D47A1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#37474F"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="BorderBrush" Value="#546E7A"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <EventSetter Event="Click" Handler="ColumnHeader_Click"/>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#BBDEFB"/>
+                    <Setter Property="Foreground" Value="#000000"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ColCheckBox" TargetType="CheckBox">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,3,0,3"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Felső panel ──────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="#ECEFF1" Padding="7,6"
+                BorderBrush="#CFD8DC" BorderThickness="0,0,0,1">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                <!-- Szűrők törlése -->
+                <Button Click="BtnClear_Click" Padding="12,7" Margin="0,0,6,3"
+                        Background="#546E7A" Foreground="White" BorderThickness="0"
+                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
+                    Szűrők törlése
+                </Button>
+
+                <!-- Sorrendezés törlése -->
+                <Button Click="BtnClearSort_Click" Padding="12,7" Margin="0,0,10,3"
+                        Background="#546E7A" Foreground="White" BorderThickness="0"
+                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
+                    Sorrendezés törlése
+                </Button>
+
+                <!-- Editálás checkbox -->
+                <CheckBox x:Name="chkEdit" Margin="0,0,8,3" VerticalAlignment="Center"
+                          FontSize="12" FontWeight="Bold" Foreground="#B71C1C"
+                          VerticalContentAlignment="Center"
+                          Checked="ChkEdit_Changed" Unchecked="ChkEdit_Changed">
+                    Editálás
+                </CheckBox>
+
+                <!-- Mentés (csak edit módban látható) -->
+                <Button x:Name="btnSave" Click="BtnSave_Click"
+                        Padding="12,7" Margin="0,0,5,3"
+                        Background="#2E7D32" Foreground="White" BorderThickness="0"
+                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                        Visibility="Collapsed">
+                    Mentés
+                </Button>
+
+                <!-- Mégse (csak edit módban látható) -->
+                <Button x:Name="btnCancel" Click="BtnCancel_Click"
+                        Padding="12,7" Margin="0,0,10,3"
+                        Background="#B71C1C" Foreground="White" BorderThickness="0"
+                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                        Visibility="Collapsed">
+                    Mégse
+                </Button>
+
+                <!-- Automatikus F11 -->
+                <CheckBox x:Name="chkAutoF11" Margin="0,0,14,3" VerticalAlignment="Center"
+                          FontSize="12" FontWeight="Bold" Foreground="#37474F"
+                          VerticalContentAlignment="Center">
+                    Automatikus F11: ↔
+                </CheckBox>
+
+                <!-- Oszlop választó -->
+                <Grid Margin="0,0,10,3" VerticalAlignment="Center">
+                    <Button x:Name="btnColumns" Click="BtnColumns_Click"
+                            Padding="10,7" Background="#546E7A" Foreground="White"
+                            BorderThickness="0" FontSize="13" FontWeight="SemiBold">
+                        Oszlopok ▾
+                    </Button>
+                    <Popup x:Name="colPopup"
+                           PlacementTarget="{Binding ElementName=btnColumns}"
+                           Placement="Bottom" StaysOpen="False">
+                        <Border Background="White" BorderBrush="#90A4AE" BorderThickness="1"
+                                CornerRadius="3" Padding="10,8" Effect="{x:Null}">
+                            <StackPanel x:Name="colSelectorPanel">
+                                <TextBlock Text="Látható oszlopok" FontWeight="Bold"
+                                           FontSize="12" Foreground="#37474F" Margin="0,0,0,6"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Disc"     IsChecked="True"  Content="Lemez sorszám"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Track"    IsChecked="True"  Content="Track"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Artist"   IsChecked="True"  Content="Előadó neve"    Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Title"    IsChecked="True"  Content="Zeneszám címe"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Duration" IsChecked="True"  Content="Hossz"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Info"     IsChecked="True"  Content="Stílus"         Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Album"    IsChecked="True"  Content="Kiadó"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="CdCim"    IsChecked="True"  Content="CD Cím"         Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <Separator Margin="0,4,0,4"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="BeerkDat" IsChecked="False" Content="Beérk. dátum"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="LejDat"   IsChecked="False" Content="Lej. dátum"    Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="LejIdo"   IsChecked="False" Content="Lej. idő"      Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </Grid>
+
+                <!-- Háttérszín választó -->
+                <Button Click="BtnRowColor_Click" Padding="10,7" Margin="0,0,10,3"
+                        Background="#546E7A" Foreground="White" BorderThickness="0"
+                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border x:Name="rowColorSwatch" Width="16" Height="16"
+                                BorderBrush="White" BorderThickness="1"
+                                Margin="0,0,7,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Háttérszín" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Szűrési szintaxis -->
+                <Border BorderBrush="#90A4AE" BorderThickness="1" CornerRadius="4"
+                        Padding="8,6" Margin="0,0,8,3" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="Szűrési szintaxis" FontWeight="Bold" FontSize="12"
+                                   Foreground="#37474F" Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Button Style="{StaticResource SyntaxBtn}"
+                                    Content="(szó eleje" Click="BtnWrapStart_Click"/>
+                            <Button Style="{StaticResource SyntaxBtn}"
+                                    Content="szó vége)" Click="BtnWrapEnd_Click"/>
+                            <Button Style="{StaticResource SyntaxBtn}" Margin="0"
+                                    Content="(szó a helyén)" Click="BtnWrapBoth_Click"/>
+                        </StackPanel>
+                        <TextBlock Text="szóköz = ÉS kapcsolat (pl.: rock ballada)"
+                                   FontSize="12" Foreground="#607D8B"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Billentyűparancsok -->
+                <Border BorderBrush="#90A4AE" BorderThickness="1" CornerRadius="4"
+                        Padding="8,6" Margin="0,0,0,3" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="Billentyűparancsok" FontWeight="Bold" FontSize="12"
+                                   Foreground="#37474F" Margin="0,0,0,5"/>
+                        <TextBlock FontSize="12" Foreground="#455A64" Margin="0,0,0,2">
+                            <Run Text="F1–F8 / fejléc kattintás: rendezés"/>
+                            <Run Text="  ·  " Foreground="#90A4AE"/>
+                            <Run Text="F11: szűrők törlése → abc → kurzor marad"/>
+                            <Run Text="  ·  " Foreground="#90A4AE"/>
+                            <Run Text="F12: mindent töröl → kurzor marad"/>
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="#455A64">
+                            <Run Text="Sorváltás: ↑↓"/>
+                            <Run Text="  ·  " Foreground="#90A4AE"/>
+                            <Run Text="Oszlopváltás: ↔"/>
+                            <Run Text="  ·  " Foreground="#90A4AE"/>
+                            <Run Text="Oldal: PgUp / PgDn"/>
+                            <Run Text="  ·  " Foreground="#90A4AE"/>
+                            <Run Text="Esc szűrőkben: törlés"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+            </WrapPanel>
+        </Border>
+
+        <!-- ── DataGrid ──────────────────────────────────────────────────── -->
+        <Grid Grid.Row="1">
+            <DataGrid x:Name="dataGrid"
+                      ItemsSource="{Binding RowsView}"
+                      AutoGenerateColumns="False"
+                      CanUserSortColumns="False"
+                      CanUserResizeColumns="True"
+                      CanUserReorderColumns="True"
+                      SelectionUnit="Cell"
+                      SelectionMode="Single"
+                      IsReadOnly="True"
+                      GridLinesVisibility="All"
+                      HorizontalGridLinesBrush="#E0E0E0"
+                      VerticalGridLinesBrush="#CFD8DC"
+                      AlternatingRowBackground="#F8F0E0"
+                      RowBackground="#FEFCF8"
+                      HeadersVisibility="Column"
+                      ColumnHeaderHeight="52"
+                      RowHeight="22"
+                      FontSize="12"
+                      FontWeight="Bold"
+                      EnableRowVirtualization="True"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.VerticalScrollBarVisibility="Visible"
+                      PreviewKeyDown="DataGrid_PreviewKeyDown">
+
+                <DataGrid.Columns>
+
+                    <!-- 1 · Lemez sorszám -->
+                    <DataGridTextColumn Binding="{Binding Disc}" Width="132">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Lemez sorszám"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI1, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterDisc, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 2 · Track -->
+                    <DataGridTextColumn Binding="{Binding Track}" Width="62">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Track"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI2, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterTrack, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 3 · Előadó neve -->
+                    <DataGridTextColumn Binding="{Binding Artist}" Width="190">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Előadó neve"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI3, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterArtist, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 4 · Zeneszám címe -->
+                    <DataGridTextColumn Binding="{Binding Title}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Zeneszám címe"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI4, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterTitle, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 5 · Hossz -->
+                    <DataGridTextColumn Binding="{Binding Duration}" Width="78">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Hossz"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI5, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterDuration, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 6 · Stílus -->
+                    <DataGridTextColumn Binding="{Binding Info}" Width="120">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Stílus"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI6, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterInfo, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 7 · Kiadó -->
+                    <DataGridTextColumn Binding="{Binding Album}" Width="150">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Kiadó"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI7, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterAlbum, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 8 · CD Cím -->
+                    <DataGridTextColumn Binding="{Binding CdCim}" Width="190">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="CD Cím"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI8, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterCdCim, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 9 · Beérk. dátum (rejtett alapértelmezetten) -->
+                    <DataGridTextColumn Binding="{Binding BeerkDat}" Width="110" Visibility="Collapsed">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Beérk. dátum"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI9, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterBeerkDat, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 10 · Lej. dátum (rejtett alapértelmezetten) -->
+                    <DataGridTextColumn Binding="{Binding LejDat}" Width="110" Visibility="Collapsed">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Lej. dátum"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI10, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterLejDat, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!-- 11 · Lej. idő (rejtett alapértelmezetten) -->
+                    <DataGridTextColumn Binding="{Binding LejIdo}" Width="90" Visibility="Collapsed">
+                        <DataGridTextColumn.Header>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="Lej. idő"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI11, Source={StaticResource vm}}"/>
+                                </StackPanel>
+                                <TextBox Style="{StaticResource FilterBox}"
+                                         Text="{Binding Data.FilterLejIdo, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="FilterBox_KeyDown"/>
+                            </StackPanel>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Betöltési overlay -->
+            <Border Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+                    Background="#CC1A237E" IsHitTestVisible="False">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Betöltés..." Foreground="White" FontSize="32"
+                               FontWeight="Bold" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ── Állapotsor ────────────────────────────────────────────────── -->
+        <StatusBar Grid.Row="2" Background="#ECEFF1">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" Margin="4,0"
+                           FontWeight="SemiBold" Foreground="#1A237E" FontSize="13"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</UserControl>
