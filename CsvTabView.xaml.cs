@@ -330,6 +330,17 @@ public partial class CsvTabView : UserControl
     private void BtnClear_Click(object sender, RoutedEventArgs e)     => _vm.ClearAllFilters();
     private void BtnClearSort_Click(object sender, RoutedEventArgs e) => _vm.ClearSortOnly();
 
+    private void BtnNew_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm.CurrentTable is null || _vm.CurrentDbPath is null) return;
+        string tbl = _vm.CurrentTable;
+        string db  = _vm.CurrentDbPath;
+        var win = new UjSorWindow(tbl, db);
+        win.RowsSaved += async () => await _vm.LoadTableAsync(tbl, db);
+        win.Owner = Window.GetWindow(this);
+        win.Show();
+    }
+
     private void BtnWrapStart_Click(object sender, RoutedEventArgs e)
     {
         if (_lastFocusedFilter is null) return;
@@ -532,6 +543,62 @@ public partial class CsvTabView : UserControl
             if (hit is not null) return hit;
         }
         return null;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? obj) where T : DependencyObject
+    {
+        while (obj is not null)
+        {
+            if (obj is T match) return match;
+            obj = VisualTreeHelper.GetParent(obj);
+        }
+        return null;
+    }
+
+    // ── Row delete (right-click in edit mode) ─────────────────────────────
+
+    private CsvRow? _contextMenuTargetRow;
+
+    private void DataGrid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);
+        _contextMenuTargetRow = row?.Item as CsvRow;
+    }
+
+    private void DataGrid_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (!_isEditMode || _contextMenuTargetRow is null)
+            e.Handled = true;
+    }
+
+    private async void MnuDeleteRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (_contextMenuTargetRow is null || _vm.CurrentTable is null || _vm.CurrentDbPath is null) return;
+
+        var result = MessageBox.Show(
+            "Biztosan törölni szeretnéd ezt a sort az adatbázisból?\nEz a művelet nem visszavonható.",
+            "Sor törlése",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes) return;
+
+        var row   = _contextMenuTargetRow;
+        string tbl = _vm.CurrentTable;
+        string db  = _vm.CurrentDbPath;
+        _contextMenuTargetRow = null;
+
+        await Task.Run(() => DeleteRowFromDb(row.RowId, tbl, db));
+        _vm.RemoveRow(row);
+    }
+
+    private static void DeleteRowFromDb(long rowId, string tableName, string dbPath)
+    {
+        using var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}");
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"DELETE FROM [{tableName}] WHERE rowid = @rowid";
+        cmd.Parameters.AddWithValue("@rowid", rowId);
+        cmd.ExecuteNonQuery();
     }
 
     // ── Edit mode ─────────────────────────────────────────────────────────

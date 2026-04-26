@@ -39,6 +39,9 @@ public class MainViewModel : INotifyPropertyChanged
     public string SI7  => _si[7];  public string SI8  => _si[8];  public string SI9  => _si[9];
     public string SI10 => _si[10]; public string SI11 => _si[11];
 
+    private string _si2Sub = "";
+    public string SI2Sub => _si2Sub;
+
     // ── Status / loading ─────────────────────────────────────────────────
     private string _statusText = "Kész";
     public string StatusText { get => _statusText; set { _statusText = value; OnPropertyChanged(); } }
@@ -66,6 +69,39 @@ public class MainViewModel : INotifyPropertyChanged
 
     public IEnumerable<CsvRow> GetAllRows() => _rows;
 
+    public void RemoveRow(CsvRow row)
+    {
+        _rows.Remove(row);
+        StatusText = $"{CountFiltered()} / {_rows.Count} sor";
+    }
+
+    public void AddRow(CsvRow row)
+    {
+        _rows.Add(row);
+        StatusText = $"{CountFiltered()} / {_rows.Count} sor";
+    }
+
+    public void LoadEmptyRows(int count, string tableName, string dbPath)
+    {
+        CurrentTable  = tableName;
+        CurrentDbPath = dbPath;
+        _rows.Clear();
+        for (int i = 0; i < count; i++) _rows.Add(new CsvRow { Track = i + 1 });
+
+        _fDisc = _fTrack = _fArtist = _fTitle = _fDuration = _fInfo = _fAlbum =
+            _fCdCim = _fBeerkDat = _fLejDat = _fLejIdo = "";
+        RaiseAllFilterProps();
+
+        RowsView.SortDescriptions.Clear();
+        if (RowsView is ListCollectionView lcv) lcv.CustomSort = null;
+        Array.Fill(_si, "");
+        RaiseAllSortIndicators();
+        _sortCol = 0;
+
+        RowsView.Refresh();
+        StatusText = $"{count} üres sor — {tableName}";
+    }
+
     public async Task LoadTableAsync(string tableName, string dbPath)
     {
         IsLoading  = true;
@@ -82,13 +118,7 @@ public class MainViewModel : INotifyPropertyChanged
             _fCdCim = _fBeerkDat = _fLejDat = _fLejIdo = "";
         RaiseAllFilterProps();
 
-        RowsView.SortDescriptions.Clear();
-        if (RowsView is ListCollectionView lcv) lcv.CustomSort = null;
-        Array.Fill(_si, "");
-        RaiseAllSortIndicators();
-        _sortCol = 0;
-
-        RowsView.Refresh();
+        ResetToDefaultSort();
         IsLoading  = false;
         StatusText = $"Betöltve {_rows.Count} sor — {tableName}";
     }
@@ -100,16 +130,7 @@ public class MainViewModel : INotifyPropertyChanged
             FilterBeerkDat = FilterLejDat = FilterLejIdo = "";
     }
 
-    public void ClearSortOnly()
-    {
-        RowsView.SortDescriptions.Clear();
-        if (RowsView is ListCollectionView lcv) lcv.CustomSort = null;
-        Array.Fill(_si, "");
-        RaiseAllSortIndicators();
-        _sortCol = 0;
-        RowsView.Refresh();
-        StatusText = $"{CountFiltered()} / {_rows.Count} sor";
-    }
+    public void ClearSortOnly() => ResetToDefaultSort();
 
     public void ClearFiltersOnly()
     {
@@ -124,15 +145,13 @@ public class MainViewModel : INotifyPropertyChanged
         _fDisc = _fTrack = _fArtist = _fTitle = _fDuration = _fInfo = _fAlbum =
             _fCdCim = _fBeerkDat = _fLejDat = _fLejIdo = "";
         RaiseAllFilterProps();
+        ResetToDefaultSort();
+    }
 
-        RowsView.SortDescriptions.Clear();
-        if (RowsView is ListCollectionView lcv) lcv.CustomSort = null;
-        Array.Fill(_si, "");
-        RaiseAllSortIndicators();
-        _sortCol = 0;
-
-        RowsView.Refresh();
-        StatusText = $"{_rows.Count} / {_rows.Count} sor";
+    private void ResetToDefaultSort()
+    {
+        _sortCol = 0; // force SortByColumn(1) to treat Disc as a fresh column → ascending
+        SortByColumn(1);
     }
 
     public void SortByColumn(int col)
@@ -163,6 +182,8 @@ public class MainViewModel : INotifyPropertyChanged
 
         Array.Fill(_si, "");
         _si[col] = _sortDir == ListSortDirection.Ascending ? " ▲" : " ▼";
+        _si2Sub = col == 1 ? " ▲" : "";
+        OnPropertyChanged(nameof(SI2Sub));
         RaiseAllSortIndicators();
 
         StatusText = $"{CountFiltered()} / {_rows.Count} sor  —  rendezve: {ColNames[col]}{_si[col]}";
@@ -279,11 +300,11 @@ public class MainViewModel : INotifyPropertyChanged
             if (x is not CsvRow rx || y is not CsvRow ry) return 0;
             int r = col switch
             {
-                1  => rx.Disc.CompareTo(ry.Disc),
+                1  => rx.Disc.CompareTo(ry.Disc) switch { 0 => rx.Track.CompareTo(ry.Track), var d => d },
                 2  => rx.Track.CompareTo(ry.Track),
                 3  => HuCompare.Compare(rx.Artist,   ry.Artist,   CompareOptions.IgnoreCase),
                 4  => HuCompare.Compare(rx.Title,    ry.Title,    CompareOptions.IgnoreCase),
-                5  => string.Compare(rx.Duration, ry.Duration, StringComparison.Ordinal),
+                5  => CompareNumeric(rx.Duration, ry.Duration),
                 6  => HuCompare.Compare(rx.Info,     ry.Info,     CompareOptions.IgnoreCase),
                 7  => HuCompare.Compare(rx.Album,    ry.Album,    CompareOptions.IgnoreCase),
                 8  => HuCompare.Compare(rx.CdCim,    ry.CdCim,    CompareOptions.IgnoreCase),
@@ -292,6 +313,26 @@ public class MainViewModel : INotifyPropertyChanged
                 _  => string.Compare(rx.LejIdo,   ry.LejIdo,   StringComparison.Ordinal),
             };
             return r * _dir;
+        }
+
+        private static int CompareNumeric(string a, string b)
+        {
+            double da = ParseAsSeconds(a), db = ParseAsSeconds(b);
+            if (!double.IsNaN(da) && !double.IsNaN(db)) return da.CompareTo(db);
+            return string.Compare(a, b, StringComparison.Ordinal);
+        }
+
+        private static double ParseAsSeconds(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return double.NaN;
+            if (double.TryParse(s, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double d)) return d;
+            var p = s.Split(':');
+            if (p.Length == 2 && int.TryParse(p[0], out int m) && int.TryParse(p[1], out int sc))
+                return m * 60 + sc;
+            if (p.Length == 3 && int.TryParse(p[0], out int h) && int.TryParse(p[1], out int mm) && int.TryParse(p[2], out int ss))
+                return h * 3600 + mm * 60 + ss;
+            return double.NaN;
         }
     }
 

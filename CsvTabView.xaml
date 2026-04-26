@@ -113,11 +113,18 @@
 
                 <!-- Mégse (csak edit módban látható) -->
                 <Button x:Name="btnCancel" Click="BtnCancel_Click"
-                        Padding="12,7" Margin="0,0,10,3"
+                        Padding="12,7" Margin="0,0,5,3"
                         Background="#B71C1C" Foreground="White" BorderThickness="0"
                         FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
                         Visibility="Collapsed">
                     Mégse
+                </Button>
+
+                <!-- Új sor hozzáadása -->
+                <Button Click="BtnNew_Click" Padding="12,7" Margin="0,0,10,3"
+                        Background="#1565C0" Foreground="White" BorderThickness="0"
+                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
+                    Új sor ＋
                 </Button>
 
                 <!-- Automatikus F11 -->
@@ -243,7 +250,16 @@
                       VirtualizingPanel.IsVirtualizing="True"
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       ScrollViewer.VerticalScrollBarVisibility="Visible"
-                      PreviewKeyDown="DataGrid_PreviewKeyDown">
+                      PreviewKeyDown="DataGrid_PreviewKeyDown"
+                      PreviewMouseRightButtonDown="DataGrid_PreviewMouseRightButtonDown"
+                      ContextMenuOpening="DataGrid_ContextMenuOpening">
+
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Sor törlése" Click="MnuDeleteRow_Click"
+                                  Foreground="#B71C1C" FontWeight="SemiBold"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
 
                 <DataGrid.Columns>
 
@@ -269,6 +285,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Style="{StaticResource HeaderLabel}" Text="Track"/>
                                     <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI2, Source={StaticResource vm}}"/>
+                                    <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI2Sub, Source={StaticResource vm}}" Opacity="0.4"/>
                                 </StackPanel>
                                 <TextBox Style="{StaticResource FilterBox}"
                                          Text="{Binding Data.FilterTrack, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
