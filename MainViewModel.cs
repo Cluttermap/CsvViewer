@@ -39,7 +39,9 @@ public class MainViewModel : INotifyPropertyChanged
     public string SI7  => _si[7];  public string SI8  => _si[8];  public string SI9  => _si[9];
     public string SI10 => _si[10]; public string SI11 => _si[11];
 
+    private string _si1Sub = "";
     private string _si2Sub = "";
+    public string SI1Sub => _si1Sub;
     public string SI2Sub => _si2Sub;
 
     // ── Status / loading ─────────────────────────────────────────────────
@@ -182,7 +184,9 @@ public class MainViewModel : INotifyPropertyChanged
 
         Array.Fill(_si, "");
         _si[col] = _sortDir == ListSortDirection.Ascending ? " ▲" : " ▼";
-        _si2Sub = col == 1 ? " ▲" : "";
+        _si1Sub = col >= 3 ? " ▲" : "";
+        _si2Sub = (col == 1 || col >= 3) ? " ▲" : "";
+        OnPropertyChanged(nameof(SI1Sub));
         OnPropertyChanged(nameof(SI2Sub));
         RaiseAllSortIndicators();
 
@@ -218,7 +222,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (raw.Length == 0) return true;
 
         if (begins && ends)
-            return HuCompare.Compare(cell, raw, CompareOptions.IgnoreCase) == 0;
+            return HuCompare.IndexOf(cell, raw, CompareOptions.IgnoreCase) >= 0;
         if (begins)
             return HuCompare.IsPrefix(cell, raw, CompareOptions.IgnoreCase);
         if (ends)
@@ -298,7 +302,7 @@ public class MainViewModel : INotifyPropertyChanged
         public int Compare(object? x, object? y)
         {
             if (x is not CsvRow rx || y is not CsvRow ry) return 0;
-            int r = col switch
+            int primary = col switch
             {
                 1  => rx.Disc.CompareTo(ry.Disc) switch { 0 => rx.Track.CompareTo(ry.Track), var d => d },
                 2  => rx.Track.CompareTo(ry.Track),
@@ -312,8 +316,13 @@ public class MainViewModel : INotifyPropertyChanged
                 10 => string.Compare(rx.LejDat,   ry.LejDat,   StringComparison.Ordinal),
                 _  => string.Compare(rx.LejIdo,   ry.LejIdo,   StringComparison.Ordinal),
             };
-            return r * _dir;
+            if (primary != 0) return primary * _dir;
+            // Disc+Track tiebreaker is always ascending regardless of primary sort direction
+            return col >= 3 ? DiscTrack(rx, ry) : 0;
         }
+
+        private static int DiscTrack(CsvRow rx, CsvRow ry)
+            => rx.Disc.CompareTo(ry.Disc) switch { 0 => rx.Track.CompareTo(ry.Track), var d => d };
 
         private static int CompareNumeric(string a, string b)
         {

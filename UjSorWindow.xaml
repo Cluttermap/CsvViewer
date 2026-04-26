@@ -155,6 +155,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource HeaderLabel}" Text="Lemez sorszám"/>
                                 <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI1, Source={StaticResource vm}}"/>
+                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI1Sub, Source={StaticResource vm}}" Opacity="0.4"/>
                             </StackPanel>
                             <TextBox Style="{StaticResource FilterBox}"
                                      Text="{Binding Data.FilterDisc, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
