@@ -24,10 +24,18 @@
                         FontSize="13" Margin="0,0,5,0">
                     Adatbázis (db)
                 </Button>
-                <Button Click="BtnCloseDb_Click" Padding="12,6"
+                <Button Click="BtnCloseDb_Click" Padding="12,6" Margin="0,0,8,0"
                         Background="#B71C1C" Foreground="White" BorderThickness="0"
                         FontSize="13">
                     Bezárás
+                </Button>
+                <Button Click="BtnHelp_Click"
+                        Width="30" Height="30"
+                        Background="#1565C0" Foreground="White" BorderThickness="0"
+                        FontSize="17" FontWeight="Bold"
+                        Cursor="Hand"
+                        ToolTip="Súgó / Kézikönyv megnyitása">
+                    ?
                 </Button>
             </StackPanel>
         </Border>

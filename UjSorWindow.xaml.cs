@@ -1,7 +1,9 @@
 using System.ComponentModel;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Data.Sqlite;
@@ -10,10 +12,81 @@ namespace CsvViewer;
 
 public partial class UjSorWindow : Window
 {
+    // ── Column state persistence (separate from main window) ─────────────
+    private static readonly string SettingsFile =
+        Path.Combine(AppContext.BaseDirectory, "ui_settings_ujsor.json");
+
+    private sealed class UjSorSettings
+    {
+        public Dictionary<string, double> ColumnWidths { get; set; } = [];
+        public List<string>               ColumnOrder  { get; set; } = [];
+    }
+
+    private static UjSorSettings _colSettings = LoadColSettings();
+
+    private static UjSorSettings LoadColSettings()
+    {
+        try
+        {
+            if (File.Exists(SettingsFile))
+            {
+                var s = JsonSerializer.Deserialize<UjSorSettings>(File.ReadAllText(SettingsFile));
+                if (s is not null) return s;
+            }
+        }
+        catch { }
+        return new UjSorSettings();
+    }
+
+    private void SaveColSettings()
+    {
+        try
+        {
+            _colSettings.ColumnWidths.Clear();
+            foreach (var col in dataGrid.Columns.OfType<DataGridBoundColumn>())
+            {
+                var key = BindingPath(col);
+                if (key is not null && col.ActualWidth > 0)
+                    _colSettings.ColumnWidths[key] = col.ActualWidth;
+            }
+            _colSettings.ColumnOrder = dataGrid.Columns.OfType<DataGridBoundColumn>()
+                .OrderBy(c => c.DisplayIndex)
+                .Select(c => BindingPath(c))
+                .Where(k => k is not null)
+                .ToList()!;
+            File.WriteAllText(SettingsFile,
+                JsonSerializer.Serialize(_colSettings, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch { }
+    }
+
+    private void ApplyColSettings()
+    {
+        foreach (var col in dataGrid.Columns.OfType<DataGridBoundColumn>())
+        {
+            var key = BindingPath(col);
+            if (key is not null && _colSettings.ColumnWidths.TryGetValue(key, out double w) && w > 0)
+                col.Width = new DataGridLength(w);
+        }
+        if (_colSettings.ColumnOrder.Count > 0)
+        {
+            int next = 1; // index 0 is the delete column
+            foreach (var key in _colSettings.ColumnOrder)
+            {
+                var col = dataGrid.Columns.OfType<DataGridBoundColumn>()
+                    .FirstOrDefault(c => BindingPath(c) == key);
+                if (col is not null) col.DisplayIndex = next++;
+            }
+        }
+    }
+
+    private static string? BindingPath(DataGridBoundColumn col)
+        => (col.Binding as Binding)?.Path.Path;
+
+    // ── Instance state ────────────────────────────────────────────────────
     private readonly MainViewModel _vm;
     private readonly string        _tableName;
     private readonly string        _dbPath;
-    private TextBox?               _lastFocusedFilter;
     private CsvRow?                _watchedRow;   // the current trailing (unfilled) row
 
     public event Action? RowsSaved;
@@ -29,13 +102,10 @@ public partial class UjSorWindow : Window
         Title       = $"Új sorok hozzáadása — {tableName}";
         DataContext = _vm;
 
+        Loaded += (_, _) => ApplyColSettings();
+
         dataGrid.CurrentCellChanged += DataGrid_CurrentCellChanged;
         WatchLastRow();
-
-        AddHandler(GotFocusEvent, new RoutedEventHandler((s, e) =>
-        {
-            if (e.OriginalSource is TextBox tb && tb.Name == "") _lastFocusedFilter = tb;
-        }));
     }
 
     // ── Dynamic row growth ────────────────────────────────────────────────
@@ -81,19 +151,6 @@ public partial class UjSorWindow : Window
         });
     }
 
-    // ── Column header click → sort ────────────────────────────────────────
-
-    private void ColumnHeader_Click(object sender, RoutedEventArgs e)
-    {
-        if (e.OriginalSource is TextBox) return;
-        if (sender is not DataGridColumnHeader { Column: not null } header) return;
-        int col = dataGrid.Columns.IndexOf(header.Column) + 1;
-        if (col < 1 || col > 11) return;
-        dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
-        dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
-        _vm.SortByColumn(col);
-    }
-
     // ── Filter box keyboard handling ──────────────────────────────────────
 
     private void FilterBox_KeyDown(object sender, KeyEventArgs e)
@@ -109,62 +166,6 @@ public partial class UjSorWindow : Window
             dataGrid.Focus();
             e.Handled = true;
         }
-    }
-
-    // ── DataGrid keyboard handling ────────────────────────────────────────
-
-    private void DataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (Keyboard.FocusedElement is TextBox) return;
-
-        int col = e.Key switch
-        {
-            Key.F1 => 1, Key.F2 => 2, Key.F3 => 3, Key.F4 => 4,
-            Key.F5 => 5, Key.F6 => 6, Key.F7 => 7, Key.F8 => 8,
-            _ => 0
-        };
-        if (col > 0)
-        {
-            e.Handled = true;
-            dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
-            dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
-            _vm.SortByColumn(col);
-        }
-    }
-
-    // ── Filter syntax buttons ─────────────────────────────────────────────
-
-    private void BtnClear_Click(object sender, RoutedEventArgs e) => _vm.ClearAllFilters();
-
-    private void BtnWrapStart_Click(object sender, RoutedEventArgs e)
-    {
-        if (_lastFocusedFilter is null) return;
-        var t = _lastFocusedFilter.Text;
-        _lastFocusedFilter.Text = t.StartsWith('(') ? t[1..] : "(" + t;
-        _lastFocusedFilter.Focus();
-    }
-
-    private void BtnWrapEnd_Click(object sender, RoutedEventArgs e)
-    {
-        if (_lastFocusedFilter is null) return;
-        var t = _lastFocusedFilter.Text;
-        _lastFocusedFilter.Text = t.EndsWith(')') ? t[..^1] : t + ")";
-        _lastFocusedFilter.Focus();
-    }
-
-    private void BtnWrapBoth_Click(object sender, RoutedEventArgs e)
-    {
-        if (_lastFocusedFilter is null) return;
-        var t = _lastFocusedFilter.Text;
-        if (t.StartsWith('(') && t.EndsWith(')'))
-            _lastFocusedFilter.Text = t[1..^1];
-        else
-        {
-            if (!t.StartsWith('(')) t = "(" + t;
-            if (!t.EndsWith(')'))   t += ")";
-            _lastFocusedFilter.Text = t;
-        }
-        _lastFocusedFilter.Focus();
     }
 
     // ── Save / Close ──────────────────────────────────────────────────────
@@ -227,6 +228,7 @@ public partial class UjSorWindow : Window
         saveOverlay.Visibility   = Visibility.Collapsed;
         btnSave.IsEnabled        = true;
         RowsSaved?.Invoke();
+        SaveColSettings();
 
         // Reset to one fresh trailing row
         if (_watchedRow is not null)
@@ -239,11 +241,36 @@ public partial class UjSorWindow : Window
         WatchLastRow();
     }
 
+    private void DeleteRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.DataContext is not CsvRow row) return;
+        if (_watchedRow == row)
+        {
+            _watchedRow.PropertyChanged -= TrailingRow_PropertyChanged;
+            _watchedRow = null;
+        }
+        _vm.RemoveRow(row);
+        WatchLastRow();
+        if (!_vm.GetAllRows().Any())
+        {
+            _vm.AddRow(new CsvRow { Track = 1 });
+            WatchLastRow();
+        }
+    }
+
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void BtnHelp_Click(object sender, RoutedEventArgs e)
+    {
+        var manual = System.IO.Path.Combine(AppContext.BaseDirectory, "kezikonyv.html");
+        if (System.IO.File.Exists(manual))
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(manual) { UseShellExecute = true });
+    }
 
     protected override void OnClosing(CancelEventArgs e)
     {
         base.OnClosing(e);
+        SaveColSettings();
 
         dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
         dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
@@ -262,8 +289,6 @@ public partial class UjSorWindow : Window
     // ── Helpers ───────────────────────────────────────────────────────────
 
     // "Filled" = user typed something meaningful beyond the auto-filled Disc/Track.
-    // Disc is always copied from the previous row, Track always auto-increments,
-    // so neither counts as user intent.
     private static bool IsRowFilled(CsvRow r)
         => !string.IsNullOrWhiteSpace(r.Artist)   ||
            !string.IsNullOrWhiteSpace(r.Title)    ||

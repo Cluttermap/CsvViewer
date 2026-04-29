@@ -125,6 +125,54 @@ public class MainViewModel : INotifyPropertyChanged
         StatusText = $"Betöltve {_rows.Count} sor — {tableName}";
     }
 
+    public async Task RefreshTableAsync(string tableName, string dbPath)
+    {
+        IsLoading = true;
+
+        var fDisc = _fDisc; var fTrack = _fTrack; var fArtist = _fArtist;
+        var fTitle = _fTitle; var fDuration = _fDuration; var fInfo = _fInfo;
+        var fAlbum = _fAlbum; var fCdCim = _fCdCim; var fBeerkDat = _fBeerkDat;
+        var fLejDat = _fLejDat; var fLejIdo = _fLejIdo;
+        int savedSortCol = _sortCol;
+        var savedSortDir = _sortDir;
+
+        CurrentTable  = tableName;
+        CurrentDbPath = dbPath;
+        var parsed = await Task.Run(() => ReadFromDb(tableName, dbPath));
+
+        _rows.Clear();
+        foreach (var r in parsed) _rows.Add(r);
+
+        _fDisc = fDisc; _fTrack = fTrack; _fArtist = fArtist;
+        _fTitle = fTitle; _fDuration = fDuration; _fInfo = fInfo;
+        _fAlbum = fAlbum; _fCdCim = fCdCim; _fBeerkDat = fBeerkDat;
+        _fLejDat = fLejDat; _fLejIdo = fLejIdo;
+        RaiseAllFilterProps();
+
+        if (savedSortCol > 0)
+        {
+            _sortCol = savedSortCol;
+            _sortDir = savedSortDir;
+            if (RowsView is ListCollectionView lcv)
+                lcv.CustomSort = new HuComparer(savedSortCol, savedSortDir);
+            Array.Fill(_si, "");
+            _si[savedSortCol] = savedSortDir == ListSortDirection.Ascending ? " ▲" : " ▼";
+            _si1Sub = savedSortCol >= 3 ? " ▲" : "";
+            _si2Sub = (savedSortCol == 1 || savedSortCol >= 3) ? " ▲" : "";
+            OnPropertyChanged(nameof(SI1Sub));
+            OnPropertyChanged(nameof(SI2Sub));
+            RaiseAllSortIndicators();
+        }
+        else
+        {
+            ResetToDefaultSort();
+        }
+
+        RowsView.Refresh();
+        IsLoading = false;
+        StatusText = $"{CountFiltered()} / {_rows.Count} sor";
+    }
+
     public void ClearAllFilters()
     {
         FilterDisc = FilterTrack = FilterArtist = FilterTitle =
@@ -198,17 +246,63 @@ public class MainViewModel : INotifyPropertyChanged
     private bool FilterPredicate(object obj)
     {
         if (obj is not CsvRow r) return false;
-        return Match(r.Disc.ToString(),  _fDisc)
-            && Match(r.Track.ToString(), _fTrack)
+        return MatchNumeric(r.Disc,                        _fDisc)
+            && MatchNumeric(r.Track,                       _fTrack)
             && Match(r.Artist,    _fArtist)
             && Match(r.Title,     _fTitle)
-            && Match(r.Duration,  _fDuration)
+            && MatchNumeric(ParseNumericValue(r.Duration), _fDuration)
             && Match(r.Info,      _fInfo)
             && Match(r.Album,     _fAlbum)
             && Match(r.CdCim,     _fCdCim)
             && Match(r.BeerkDat,  _fBeerkDat)
             && Match(r.LejDat,    _fLejDat)
             && Match(r.LejIdo,    _fLejIdo);
+    }
+
+    // Numeric filter: supports  5  |  <5  |  >5  |  >3<7  (between, exclusive)
+    // For Duration the cell value is already parsed to seconds via ParseNumericValue.
+    private static bool MatchNumeric(double cellVal, string filter)
+    {
+        filter = filter.Trim();
+        if (filter.Length == 0) return true;
+        if (double.IsNaN(cellVal)) return false;
+
+        if (filter.StartsWith('>'))
+        {
+            // between: >LO<HI
+            int ltIdx = filter.IndexOf('<', 1);
+            if (ltIdx > 1)
+            {
+                double lo = ParseNumericValue(filter[1..ltIdx]);
+                double hi = ParseNumericValue(filter[(ltIdx + 1)..]);
+                if (!double.IsNaN(lo) && !double.IsNaN(hi))
+                    return cellVal > lo && cellVal < hi;
+            }
+            double gt = ParseNumericValue(filter[1..]);
+            return !double.IsNaN(gt) && cellVal > gt;
+        }
+
+        if (filter.StartsWith('<'))
+        {
+            double lt = ParseNumericValue(filter[1..]);
+            return !double.IsNaN(lt) && cellVal < lt;
+        }
+
+        double exact = ParseNumericValue(filter);
+        return !double.IsNaN(exact) && Math.Abs(cellVal - exact) < 0.001;
+    }
+
+    internal static double ParseNumericValue(string s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return double.NaN;
+        if (double.TryParse(s, System.Globalization.NumberStyles.Any,
+                CultureInfo.InvariantCulture, out double d)) return d;
+        var p = s.Split(':');
+        if (p.Length == 2 && int.TryParse(p[0], out int m) && int.TryParse(p[1], out int sc))
+            return m * 60 + sc;
+        if (p.Length == 3 && int.TryParse(p[0], out int h) && int.TryParse(p[1], out int mm) && int.TryParse(p[2], out int ss))
+            return h * 3600 + mm * 60 + ss;
+        return double.NaN;
     }
 
     private static bool Match(string cell, string filter)
@@ -272,8 +366,13 @@ public class MainViewModel : INotifyPropertyChanged
         return n;
     }
 
+    public void RefreshView() => Refresh();
+
     private void Refresh()
     {
+        if (RowsView is System.Windows.Data.ListCollectionView { IsEditingItem: true } or
+                        System.Windows.Data.ListCollectionView { IsAddingNew:    true })
+            return;
         RowsView.Refresh();
         StatusText = $"{CountFiltered()} / {_rows.Count} sor";
     }
@@ -326,22 +425,9 @@ public class MainViewModel : INotifyPropertyChanged
 
         private static int CompareNumeric(string a, string b)
         {
-            double da = ParseAsSeconds(a), db = ParseAsSeconds(b);
+            double da = ParseNumericValue(a), db = ParseNumericValue(b);
             if (!double.IsNaN(da) && !double.IsNaN(db)) return da.CompareTo(db);
             return string.Compare(a, b, StringComparison.Ordinal);
-        }
-
-        private static double ParseAsSeconds(string s)
-        {
-            if (string.IsNullOrWhiteSpace(s)) return double.NaN;
-            if (double.TryParse(s, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double d)) return d;
-            var p = s.Split(':');
-            if (p.Length == 2 && int.TryParse(p[0], out int m) && int.TryParse(p[1], out int sc))
-                return m * 60 + sc;
-            if (p.Length == 3 && int.TryParse(p[0], out int h) && int.TryParse(p[1], out int mm) && int.TryParse(p[2], out int ss))
-                return h * 3600 + mm * 60 + ss;
-            return double.NaN;
         }
     }
 

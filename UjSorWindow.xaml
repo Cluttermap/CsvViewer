@@ -1,52 +1,20 @@
 <Window x:Class="CsvViewer.UjSorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:CsvViewer"
         WindowStartupLocation="CenterOwner"
         Height="750" Width="1400"
         WindowState="Maximized">
 
     <Window.Resources>
-        <local:BindingProxy x:Key="vm" Data="{Binding}"/>
-
-        <Style x:Key="FilterBox" TargetType="TextBox">
-            <Setter Property="Margin" Value="0,3,0,2"/>
-            <Setter Property="Padding" Value="3,2"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="Normal"/>
-            <Setter Property="Background" Value="#FEFCF8"/>
-            <Setter Property="BorderBrush" Value="#B0BEC5"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-        </Style>
-
-        <Style x:Key="HeaderLabel" TargetType="TextBlock">
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="2,3,2,0"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-        </Style>
-
-        <Style x:Key="SyntaxBtn" TargetType="Button">
-            <Setter Property="Padding" Value="7,3"/>
-            <Setter Property="Margin" Value="0,0,5,0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontFamily" Value="Consolas"/>
-            <Setter Property="Background" Value="#E3F2FD"/>
-            <Setter Property="BorderBrush" Value="#90CAF9"/>
-            <Setter Property="Foreground" Value="#0D47A1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="#37474F"/>
-            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="6,5"/>
             <Setter Property="BorderBrush" Value="#546E7A"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <EventSetter Event="Click" Handler="ColumnHeader_Click"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style TargetType="DataGridCell">
@@ -66,49 +34,31 @@
         <!-- ── Felső panel ──────────────────────────────────────────────────── -->
         <Border DockPanel.Dock="Top" Background="#ECEFF1" Padding="7,6"
                 BorderBrush="#CFD8DC" BorderThickness="0,0,0,1">
-            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 
-                <!-- Mentés -->
-                <Button x:Name="btnSave" Click="BtnSave_Click" Padding="12,7" Margin="0,0,5,3"
+                <Button x:Name="btnSave" Click="BtnSave_Click" Padding="12,7" Margin="0,0,5,0"
                         Background="#2E7D32" Foreground="White" BorderThickness="0"
                         FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
                     Mentés
                 </Button>
 
-                <!-- Bezárás -->
-                <Button Click="BtnClose_Click" Padding="12,7" Margin="0,0,14,3"
+                <Button Click="BtnClose_Click" Padding="12,7" Margin="0,0,8,0"
                         Background="#546E7A" Foreground="White" BorderThickness="0"
                         FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
                     Bezárás
                 </Button>
 
-                <!-- Szűrők törlése -->
-                <Button Click="BtnClear_Click" Padding="12,7" Margin="0,0,14,3"
-                        Background="#546E7A" Foreground="White" BorderThickness="0"
-                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
-                    Szűrők törlése
+                <Button Click="BtnHelp_Click"
+                        Width="34" Height="34"
+                        Background="#1565C0" Foreground="White" BorderThickness="0"
+                        FontSize="18" FontWeight="Bold"
+                        VerticalAlignment="Center"
+                        Cursor="Hand"
+                        ToolTip="Súgó / Kézikönyv megnyitása">
+                    ?
                 </Button>
 
-                <!-- Szűrési szintaxis -->
-                <Border BorderBrush="#90A4AE" BorderThickness="1" CornerRadius="4"
-                        Padding="8,6" Margin="0,0,8,3" VerticalAlignment="Center">
-                    <StackPanel>
-                        <TextBlock Text="Szűrési szintaxis" FontWeight="Bold" FontSize="12"
-                                   Foreground="#37474F" Margin="0,0,0,5"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Button Style="{StaticResource SyntaxBtn}"
-                                    Content="(szó eleje" Click="BtnWrapStart_Click"/>
-                            <Button Style="{StaticResource SyntaxBtn}"
-                                    Content="szó vége)" Click="BtnWrapEnd_Click"/>
-                            <Button Style="{StaticResource SyntaxBtn}" Margin="0"
-                                    Content="(szó a helyén)" Click="BtnWrapBoth_Click"/>
-                        </StackPanel>
-                        <TextBlock Text="szóköz = ÉS kapcsolat (pl.: rock ballada)"
-                                   FontSize="12" Foreground="#607D8B"/>
-                    </StackPanel>
-                </Border>
-
-            </WrapPanel>
+            </StackPanel>
         </Border>
 
         <!-- ── Állapotsor ────────────────────────────────────────────────────── -->
@@ -136,190 +86,66 @@
                   AlternatingRowBackground="#F0F4F8"
                   RowBackground="#FEFCF8"
                   HeadersVisibility="Column"
-                  ColumnHeaderHeight="52"
+                  ColumnHeaderHeight="30"
                   RowHeight="22"
                   FontSize="12"
                   FontWeight="Bold"
                   EnableRowVirtualization="True"
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling"
-                  ScrollViewer.VerticalScrollBarVisibility="Visible"
-                  PreviewKeyDown="DataGrid_PreviewKeyDown">
+                  ScrollViewer.VerticalScrollBarVisibility="Visible">
 
             <DataGrid.Columns>
 
-                <!-- 1 · Lemez sorszám -->
-                <DataGridTextColumn Binding="{Binding Disc, UpdateSourceTrigger=PropertyChanged}" Width="120">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Lemez sorszám"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI1, Source={StaticResource vm}}"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI1Sub, Source={StaticResource vm}}" Opacity="0.4"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterDisc, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
+                <!-- 0 · Törlés -->
+                <DataGridTemplateColumn Header="⌫" Width="34"
+                                        CanUserReorder="False" CanUserResize="False" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellStyle>
+                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Setter Property="Padding" Value="0"/>
+                        </Style>
+                    </DataGridTemplateColumn.CellStyle>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="✕" Click="DeleteRow_Click" ClickMode="Press"
+                                    Background="Transparent" BorderThickness="0"
+                                    Foreground="#B71C1C" FontSize="13" FontWeight="Bold"
+                                    Cursor="Hand"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                    Padding="0" ToolTip="Sor törlése"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
-                <!-- 2 · Track -->
-                <DataGridTextColumn Binding="{Binding Track, UpdateSourceTrigger=PropertyChanged}" Width="62">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Track"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI2, Source={StaticResource vm}}"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI2Sub, Source={StaticResource vm}}" Opacity="0.4"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterTrack, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 3 · Előadó neve -->
-                <DataGridTextColumn Binding="{Binding Artist, UpdateSourceTrigger=PropertyChanged}" Width="190">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Előadó neve"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI3, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterArtist, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 4 · Zeneszám címe -->
-                <DataGridTextColumn Binding="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Width="200">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Zeneszám címe"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI4, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterTitle, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 5 · Hossz -->
-                <DataGridTextColumn Binding="{Binding Duration, UpdateSourceTrigger=PropertyChanged}" Width="78">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Hossz"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI5, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterDuration, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 6 · Stílus -->
-                <DataGridTextColumn Binding="{Binding Info, UpdateSourceTrigger=PropertyChanged}" Width="120">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Stílus"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI6, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterInfo, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 7 · Kiadó -->
-                <DataGridTextColumn Binding="{Binding Album, UpdateSourceTrigger=PropertyChanged}" Width="150">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Kiadó"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI7, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterAlbum, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 8 · CD Cím -->
-                <DataGridTextColumn Binding="{Binding CdCim, UpdateSourceTrigger=PropertyChanged}" Width="190">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="CD Cím"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI8, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterCdCim, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 9 · Beérk. dátum -->
-                <DataGridTextColumn Binding="{Binding BeerkDat, UpdateSourceTrigger=PropertyChanged}" Width="110">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Beérk. dátum"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI9, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterBeerkDat, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 10 · Lej. dátum -->
-                <DataGridTextColumn Binding="{Binding LejDat, UpdateSourceTrigger=PropertyChanged}" Width="110">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Lej. dátum"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI10, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterLejDat, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-
-                <!-- 11 · Lej. idő -->
-                <DataGridTextColumn Binding="{Binding LejIdo, UpdateSourceTrigger=PropertyChanged}" Width="90">
-                    <DataGridTextColumn.Header>
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="Lej. idő"/>
-                                <TextBlock Style="{StaticResource HeaderLabel}" Text="{Binding Data.SI11, Source={StaticResource vm}}"/>
-                            </StackPanel>
-                            <TextBox Style="{StaticResource FilterBox}"
-                                     Text="{Binding Data.FilterLejIdo, Source={StaticResource vm}, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="FilterBox_KeyDown"/>
-                        </StackPanel>
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
+                <DataGridTextColumn Header="Lemez sorszám"
+                                    Binding="{Binding Disc, UpdateSourceTrigger=PropertyChanged}"     Width="120"/>
+                <DataGridTextColumn Header="Track"
+                                    Binding="{Binding Track, UpdateSourceTrigger=PropertyChanged}"    Width="62"/>
+                <DataGridTextColumn Header="Előadó neve"
+                                    Binding="{Binding Artist, UpdateSourceTrigger=PropertyChanged}"   Width="190"/>
+                <DataGridTextColumn Header="Zeneszám címe"
+                                    Binding="{Binding Title, UpdateSourceTrigger=PropertyChanged}"    Width="200"/>
+                <DataGridTextColumn Header="Hossz"
+                                    Binding="{Binding Duration, UpdateSourceTrigger=PropertyChanged}" Width="78"/>
+                <DataGridTextColumn Header="Stílus"
+                                    Binding="{Binding Info, UpdateSourceTrigger=PropertyChanged}"     Width="120"/>
+                <DataGridTextColumn Header="Kiadó"
+                                    Binding="{Binding Album, UpdateSourceTrigger=PropertyChanged}"    Width="150"/>
+                <DataGridTextColumn Header="CD Cím"
+                                    Binding="{Binding CdCim, UpdateSourceTrigger=PropertyChanged}"    Width="190"/>
+                <DataGridTextColumn Header="Beérk. dátum"
+                                    Binding="{Binding BeerkDat, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
+                <DataGridTextColumn Header="Lej. dátum"
+                                    Binding="{Binding LejDat, UpdateSourceTrigger=PropertyChanged}"   Width="110"/>
+                <DataGridTextColumn Header="Lej. idő"
+                                    Binding="{Binding LejIdo, UpdateSourceTrigger=PropertyChanged}"   Width="90"/>
 
             </DataGrid.Columns>
         </DataGrid>
     </DockPanel>
 
-    <!-- Save overlay — covers the whole window while saving -->
+    <!-- Save overlay -->
     <Border x:Name="saveOverlay" Visibility="Collapsed"
             Background="#CC1A237E" IsHitTestVisible="True">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">

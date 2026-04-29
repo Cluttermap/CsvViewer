@@ -78,113 +78,111 @@
         <!-- ── Felső panel ──────────────────────────────────────────────── -->
         <Border Grid.Row="0" Background="#ECEFF1" Padding="7,6"
                 BorderBrush="#CFD8DC" BorderThickness="0,0,0,1">
-            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 
-                <!-- Szűrők törlése -->
-                <Button Click="BtnClear_Click" Padding="12,7" Margin="0,0,6,3"
-                        Background="#546E7A" Foreground="White" BorderThickness="0"
-                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
-                    Szűrők törlése
-                </Button>
+                <!-- Szűrők törlése / Sorrendezés törlése stacked -->
+                <StackPanel Orientation="Vertical" Margin="0,0,6,0" VerticalAlignment="Center">
+                    <Button Click="BtnClear_Click" Padding="12,4" Margin="0,0,0,2"
+                            Background="#546E7A" Foreground="White" BorderThickness="0"
+                            FontSize="12" FontWeight="SemiBold">
+                        Szűrők törlése
+                    </Button>
+                    <Button Click="BtnClearSort_Click" Padding="12,4"
+                            Background="#546E7A" Foreground="White" BorderThickness="0"
+                            FontSize="12" FontWeight="SemiBold">
+                        Sorrendezés törlése
+                    </Button>
+                </StackPanel>
 
-                <!-- Sorrendezés törlése -->
-                <Button Click="BtnClearSort_Click" Padding="12,7" Margin="0,0,10,3"
-                        Background="#546E7A" Foreground="White" BorderThickness="0"
-                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
-                    Sorrendezés törlése
-                </Button>
+                <!-- Editálás+Mentés+Mégse / Automatikus F11 stacked -->
+                <StackPanel Orientation="Vertical" Margin="0,0,6,0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                        <CheckBox x:Name="chkEdit" Margin="0,0,6,0" VerticalAlignment="Center"
+                                  FontSize="12" FontWeight="Bold" Foreground="#B71C1C"
+                                  VerticalContentAlignment="Center"
+                                  Checked="ChkEdit_Changed" Unchecked="ChkEdit_Changed">
+                            Editálás
+                        </CheckBox>
+                        <Button x:Name="btnSave" Click="BtnSave_Click"
+                                Padding="10,3" Margin="0,0,4,0"
+                                Background="#2E7D32" Foreground="White" BorderThickness="0"
+                                FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                Visibility="Hidden">
+                            Mentés
+                        </Button>
+                        <Button x:Name="btnCancel" Click="BtnCancel_Click"
+                                Padding="10,3"
+                                Background="#B71C1C" Foreground="White" BorderThickness="0"
+                                FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                Visibility="Hidden">
+                            Mégse
+                        </Button>
+                    </StackPanel>
+                    <CheckBox x:Name="chkAutoF11" VerticalAlignment="Center"
+                              FontSize="12" FontWeight="Bold" Foreground="#37474F"
+                              VerticalContentAlignment="Center">
+                        Automatikus F11: ↔
+                    </CheckBox>
+                </StackPanel>
 
-                <!-- Editálás checkbox -->
-                <CheckBox x:Name="chkEdit" Margin="0,0,8,3" VerticalAlignment="Center"
-                          FontSize="12" FontWeight="Bold" Foreground="#B71C1C"
-                          VerticalContentAlignment="Center"
-                          Checked="ChkEdit_Changed" Unchecked="ChkEdit_Changed">
-                    Editálás
-                </CheckBox>
-
-                <!-- Mentés (csak edit módban látható) -->
-                <Button x:Name="btnSave" Click="BtnSave_Click"
-                        Padding="12,7" Margin="0,0,5,3"
-                        Background="#2E7D32" Foreground="White" BorderThickness="0"
-                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
-                        Visibility="Collapsed">
-                    Mentés
-                </Button>
-
-                <!-- Mégse (csak edit módban látható) -->
-                <Button x:Name="btnCancel" Click="BtnCancel_Click"
-                        Padding="12,7" Margin="0,0,5,3"
-                        Background="#B71C1C" Foreground="White" BorderThickness="0"
-                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
-                        Visibility="Collapsed">
-                    Mégse
-                </Button>
-
-                <!-- Új sor hozzáadása -->
-                <Button Click="BtnNew_Click" Padding="12,7" Margin="0,0,10,3"
+                <!-- Új sor -->
+                <Button Click="BtnNew_Click" Padding="12,7" Margin="0,0,6,0"
                         Background="#1565C0" Foreground="White" BorderThickness="0"
                         FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
                     Új sor ＋
                 </Button>
 
-                <!-- Automatikus F11 -->
-                <CheckBox x:Name="chkAutoF11" Margin="0,0,14,3" VerticalAlignment="Center"
-                          FontSize="12" FontWeight="Bold" Foreground="#37474F"
-                          VerticalContentAlignment="Center">
-                    Automatikus F11: ↔
-                </CheckBox>
-
-                <!-- Oszlop választó -->
-                <Grid Margin="0,0,10,3" VerticalAlignment="Center">
-                    <Button x:Name="btnColumns" Click="BtnColumns_Click"
-                            Padding="10,7" Background="#546E7A" Foreground="White"
-                            BorderThickness="0" FontSize="13" FontWeight="SemiBold">
-                        Oszlopok ▾
+                <!-- Oszlopok / Háttérszín stacked -->
+                <StackPanel Orientation="Vertical" Margin="0,0,8,0" VerticalAlignment="Center">
+                    <Grid Margin="0,0,0,2">
+                        <Button x:Name="btnColumns" Click="BtnColumns_Click"
+                                Padding="10,4" Background="#546E7A" Foreground="White"
+                                BorderThickness="0" FontSize="12" FontWeight="SemiBold">
+                            Oszlopok ▾
+                        </Button>
+                        <Popup x:Name="colPopup"
+                               PlacementTarget="{Binding ElementName=btnColumns}"
+                               Placement="Bottom" StaysOpen="False">
+                            <Border Background="White" BorderBrush="#90A4AE" BorderThickness="1"
+                                    CornerRadius="3" Padding="10,8" Effect="{x:Null}">
+                                <StackPanel x:Name="colSelectorPanel">
+                                    <TextBlock Text="Látható oszlopok" FontWeight="Bold"
+                                               FontSize="12" Foreground="#37474F" Margin="0,0,0,6"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="Disc"     IsChecked="True"  Content="Lemez sorszám"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="Track"    IsChecked="True"  Content="Track"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="Artist"   IsChecked="True"  Content="Előadó neve"    Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="Title"    IsChecked="True"  Content="Zeneszám címe"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="Duration" IsChecked="True"  Content="Hossz"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="Info"     IsChecked="True"  Content="Stílus"         Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="Album"    IsChecked="True"  Content="Kiadó"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="CdCim"    IsChecked="True"  Content="CD Cím"         Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <Separator Margin="0,4,0,4"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="BeerkDat" IsChecked="False" Content="Beérk. dátum"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="LejDat"   IsChecked="False" Content="Lej. dátum"    Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                    <CheckBox Style="{StaticResource ColCheckBox}" Tag="LejIdo"   IsChecked="False" Content="Lej. idő"      Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <Button Click="BtnRowColor_Click" Padding="10,4"
+                            Background="#546E7A" Foreground="White" BorderThickness="0"
+                            FontSize="12" FontWeight="SemiBold">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border x:Name="rowColorSwatch" Width="14" Height="14"
+                                    BorderBrush="White" BorderThickness="1"
+                                    Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Háttérszín" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </Button>
-                    <Popup x:Name="colPopup"
-                           PlacementTarget="{Binding ElementName=btnColumns}"
-                           Placement="Bottom" StaysOpen="False">
-                        <Border Background="White" BorderBrush="#90A4AE" BorderThickness="1"
-                                CornerRadius="3" Padding="10,8" Effect="{x:Null}">
-                            <StackPanel x:Name="colSelectorPanel">
-                                <TextBlock Text="Látható oszlopok" FontWeight="Bold"
-                                           FontSize="12" Foreground="#37474F" Margin="0,0,0,6"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Disc"     IsChecked="True"  Content="Lemez sorszám"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Track"    IsChecked="True"  Content="Track"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Artist"   IsChecked="True"  Content="Előadó neve"    Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Title"    IsChecked="True"  Content="Zeneszám címe"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Duration" IsChecked="True"  Content="Hossz"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Info"     IsChecked="True"  Content="Stílus"         Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="Album"    IsChecked="True"  Content="Kiadó"          Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="CdCim"    IsChecked="True"  Content="CD Cím"         Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <Separator Margin="0,4,0,4"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="BeerkDat" IsChecked="False" Content="Beérk. dátum"  Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="LejDat"   IsChecked="False" Content="Lej. dátum"    Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                                <CheckBox Style="{StaticResource ColCheckBox}" Tag="LejIdo"   IsChecked="False" Content="Lej. idő"      Checked="ColVis_Changed" Unchecked="ColVis_Changed"/>
-                            </StackPanel>
-                        </Border>
-                    </Popup>
-                </Grid>
-
-                <!-- Háttérszín választó -->
-                <Button Click="BtnRowColor_Click" Padding="10,7" Margin="0,0,10,3"
-                        Background="#546E7A" Foreground="White" BorderThickness="0"
-                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border x:Name="rowColorSwatch" Width="16" Height="16"
-                                BorderBrush="White" BorderThickness="1"
-                                Margin="0,0,7,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Háttérszín" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+                </StackPanel>
 
                 <!-- Szűrési szintaxis -->
                 <Border BorderBrush="#90A4AE" BorderThickness="1" CornerRadius="4"
-                        Padding="8,6" Margin="0,0,8,3" VerticalAlignment="Center">
+                        Padding="8,5" Margin="0,0,8,0" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="Szűrési szintaxis" FontWeight="Bold" FontSize="12"
-                                   Foreground="#37474F" Margin="0,0,0,5"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                   Foreground="#37474F" Margin="0,0,0,4"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
                             <Button Style="{StaticResource SyntaxBtn}"
                                     Content="(szó eleje" Click="BtnWrapStart_Click"/>
                             <Button Style="{StaticResource SyntaxBtn}"
@@ -192,17 +190,15 @@
                             <Button Style="{StaticResource SyntaxBtn}" Margin="0"
                                     Content="(szó a helyén)" Click="BtnWrapBoth_Click"/>
                         </StackPanel>
-                        <TextBlock Text="szóköz = ÉS kapcsolat (pl.: rock ballada)"
-                                   FontSize="12" Foreground="#607D8B"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Billentyűparancsok -->
                 <Border BorderBrush="#90A4AE" BorderThickness="1" CornerRadius="4"
-                        Padding="8,6" Margin="0,0,0,3" VerticalAlignment="Center">
+                        Padding="8,5" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="Billentyűparancsok" FontWeight="Bold" FontSize="12"
-                                   Foreground="#37474F" Margin="0,0,0,5"/>
+                                   Foreground="#37474F" Margin="0,0,0,4"/>
                         <TextBlock FontSize="12" Foreground="#455A64" Margin="0,0,0,2">
                             <Run Text="F1–F8 / fejléc kattintás: rendezés"/>
                             <Run Text="  ·  " Foreground="#90A4AE"/>
@@ -222,7 +218,7 @@
                     </StackPanel>
                 </Border>
 
-            </WrapPanel>
+            </StackPanel>
         </Border>
 
         <!-- ── DataGrid ──────────────────────────────────────────────────── -->
@@ -251,6 +247,7 @@
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       ScrollViewer.VerticalScrollBarVisibility="Visible"
                       PreviewKeyDown="DataGrid_PreviewKeyDown"
+                      RowEditEnding="DataGrid_RowEditEnding"
                       PreviewMouseRightButtonDown="DataGrid_PreviewMouseRightButtonDown"
                       ContextMenuOpening="DataGrid_ContextMenuOpening">
 
@@ -261,7 +258,43 @@
                     </ContextMenu>
                 </DataGrid.ContextMenu>
 
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMarkedForDelete}" Value="True">
+                                <Setter Property="Background"  Value="#FFCDD2"/>
+                                <Setter Property="Foreground"  Value="#B71C1C"/>
+                                <Setter Property="FontStyle"   Value="Italic"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+
                 <DataGrid.Columns>
+
+                    <!-- 0 · Törlés (csak szerkesztés módban látható) -->
+                    <DataGridTemplateColumn Width="34" CanUserReorder="False" CanUserResize="False"
+                                           IsReadOnly="True" Visibility="Collapsed">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="⌫" FontSize="13" HorizontalAlignment="Center"/>
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                <Setter Property="Padding" Value="0"/>
+                            </Style>
+                        </DataGridTemplateColumn.CellStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="✕" Click="DeleteRow_Click" ClickMode="Press"
+                                        Background="Transparent" BorderThickness="0"
+                                        Foreground="#B71C1C" FontSize="13" FontWeight="Bold"
+                                        Cursor="Hand"
+                                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                        Padding="0" ToolTip="Sor törlése mentéskor"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                     <!-- 1 · Lemez sorszám -->
                     <DataGridTextColumn Binding="{Binding Disc}" Width="132">

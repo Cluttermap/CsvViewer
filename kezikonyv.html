@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV Néző – Felhasználói Kézikönyv</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #263238;
+    background: #f5f7f9;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 30px 80px;
+  }
+
+  /* ── Header ─────────────────────────────────────────── */
+  .cover {
+    background: linear-gradient(135deg, #37474F 0%, #1a2a35 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 40px 44px 36px;
+    margin-bottom: 40px;
+  }
+  .cover h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .cover .subtitle { font-size: 15px; opacity: 0.75; }
+  .cover .version { font-size: 12px; opacity: 0.5; margin-top: 18px; }
+
+  /* ── TOC ─────────────────────────────────────────────── */
+  .toc {
+    background: white;
+    border: 1px solid #dde3e8;
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 38px;
+  }
+  .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em;
+             color: #78909C; margin-bottom: 14px; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin-bottom: 5px; }
+  .toc a { color: #1565C0; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Sections ────────────────────────────────────────── */
+  section {
+    background: white;
+    border: 1px solid #dde3e8;
+    border-radius: 8px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  section h2 {
+    font-size: 19px;
+    font-weight: 700;
+    color: #1a2a35;
+    border-bottom: 2px solid #ECEFF1;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #37474F;
+    margin: 22px 0 8px;
+  }
+  section p { margin-bottom: 10px; }
+  section ul, section ol { padding-left: 22px; margin-bottom: 10px; }
+  section li { margin-bottom: 5px; }
+
+  /* ── Inline UI elements ──────────────────────────────── */
+  .btn {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    vertical-align: middle;
+  }
+  .btn-grey  { background: #546E7A; }
+  .btn-green { background: #2E7D32; }
+  .btn-red   { background: #B71C1C; }
+  .btn-blue  { background: #1565C0; }
+  .btn-dark  { background: #37474F; }
+
+  .key {
+    display: inline-block;
+    background: #ECEFF1;
+    border: 1px solid #B0BEC5;
+    border-bottom: 2px solid #90A4AE;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-family: "Consolas", monospace;
+    font-size: 13px;
+    color: #263238;
+    vertical-align: middle;
+  }
+
+  .filter-ex {
+    display: inline-block;
+    font-family: "Consolas", monospace;
+    font-size: 13px;
+    background: #FEFCF8;
+    border: 1px solid #B0BEC5;
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: #1a2a35;
+  }
+
+  /* ── Info boxes ──────────────────────────────────────── */
+  .tip, .warn, .note {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  .tip  { background: #E8F5E9; border-left: 4px solid #2E7D32; }
+  .warn { background: #FFF3E0; border-left: 4px solid #E65100; }
+  .note { background: #E3F2FD; border-left: 4px solid #1565C0; }
+  .tip  strong { color: #1B5E20; }
+  .warn strong { color: #BF360C; }
+  .note strong { color: #0D47A1; }
+
+  /* ── Tables ──────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  th {
+    background: #ECEFF1;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 700;
+    color: #37474F;
+    border: 1px solid #CFD8DC;
+  }
+  td {
+    padding: 7px 12px;
+    border: 1px solid #ECEFF1;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #FAFAFA; }
+
+  /* ── Step list ───────────────────────────────────────── */
+  .steps { counter-reset: step; padding: 0; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    padding: 8px 8px 8px 46px;
+    position: relative;
+    margin-bottom: 6px;
+    border-radius: 5px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 10px;
+    top: 9px;
+    background: #37474F;
+    color: white;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps li:nth-child(odd)  { background: #F9FAFB; }
+  .steps li:nth-child(even) { background: #FFFFFF; }
+
+  /* ── Shortcut grid ───────────────────────────────────── */
+  .shortcut-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    margin: 10px 0;
+  }
+  .sc-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .sc-key { flex-shrink: 0; }
+  .sc-desc { color: #455A64; }
+
+  /* ── Column diagram ──────────────────────────────────── */
+  .col-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+  }
+  .col-pill {
+    background: #37474F;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+
+  /* ── Delete mark demo ────────────────────────────────── */
+  .demo-row-del {
+    background: #FFCDD2;
+    color: #B71C1C;
+    font-style: italic;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    display: inline-block;
+    margin: 4px 0;
+  }
+  .demo-row-norm {
+    background: #FEFCF8;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    display: inline-block;
+    margin: 4px 0;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══════════════════════════════════════════════ COVER -->
+  <div class="cover">
+    <h1>📀 CSV Néző</h1>
+    <div class="subtitle">Felhasználói kézikönyv — zenei adatbázis kezelő program</div>
+    <div class="version">Minden funkció részletesen, magyarul</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ TOC -->
+  <div class="toc">
+    <h2>Tartalomjegyzék</h2>
+    <ol>
+      <li><a href="#inditas">Az alkalmazás elindítása és az adatbázis megnyitása</a></li>
+      <li><a href="#foablak">A főablak áttekintése</a></li>
+      <li><a href="#szures">Keresés és szűrés</a></li>
+      <li><a href="#rendezes">Rendezés</a></li>
+      <li><a href="#oszlopok">Oszlopok kezelése</a></li>
+      <li><a href="#szerkesztes">Szerkesztés mód — meglévő adatok módosítása</a></li>
+      <li><a href="#ujsor">Új sorok hozzáadása</a></li>
+      <li><a href="#parancsok">Billentyűparancsok összefoglalója</a></li>
+      <li><a href="#tippek">Hasznos tippek</a></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ 1 -->
+  <section id="inditas">
+    <h2>1 · Az alkalmazás elindítása és az adatbázis megnyitása</h2>
+
+    <p>Indítsd el a programot. A felső részen egy legördülő listát és egy gombot látsz:</p>
+
+    <ul>
+      <li><strong>Adatbázis legördülő lista</strong> — ha már megnyitottál adatbázist korábban, itt kiválaszthatod az előzőleg használtakat.</li>
+      <li><span class="btn btn-blue">Adatbázis (db)</span> — ezzel a gombbal böngészhetsz a számítógépen és nyithatsz meg egy <code>.db</code> kiterjesztésű adatbázis fájlt.</li>
+    </ul>
+
+    <p>Az adatbázis megnyitása után a program automatikusan betölti a benne lévő táblázatokat. Minden tábla saját <strong>fülön</strong> jelenik meg a lista tetején — egyszerűen kattints a kívánt fülre a váltáshoz.</p>
+
+    <div class="note"><strong>Megjegyzés:</strong> A program megjegyzi az utoljára megnyitott adatbázist, és következő indításkor automatikusan felajánlja.</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 2 -->
+  <section id="foablak">
+    <h2>2 · A főablak áttekintése</h2>
+
+    <p>A főablak három fő részből áll:</p>
+
+    <h3>Eszköztár (felül)</h3>
+    <p>Az eszköztárban találhatók a gombok és kapcsolók. Balról jobbra:</p>
+    <ul>
+      <li><span class="btn btn-grey">Szűrők törlése</span> — törli az összes beírt szűrőt</li>
+      <li><span class="btn btn-grey">Sorrendezés törlése</span> — visszaállítja az alapértelmezett (lemez+track) rendezést</li>
+      <li><strong>Editálás</strong> jelölőnégyzet — bekapcsolja a szerkesztési módot (lásd 6. fejezet)</li>
+      <li><strong>Automatikus F11: ↔</strong> jelölőnégyzet — ha be van jelölve, bal/jobb nyíl gomb megnyomásakor a lista automatikusan az aktuális oszlop szerint rendeződik</li>
+      <li><span class="btn btn-blue">Új sor ＋</span> — új rekordok bevitelére szolgáló ablakot nyit (lásd 7. fejezet)</li>
+      <li><span class="btn btn-grey">Oszlopok ▾</span> — megmutatja/elrejti az egyes oszlopokat</li>
+      <li><span class="btn btn-grey">Háttérszín</span> — megváltoztatja a sorok háttérszínét</li>
+      <li>A két keretes doboz a <strong>szűrési szintaxis segítőt</strong> és a <strong>billentyűparancsok emlékeztetőjét</strong> tartalmazza</li>
+    </ul>
+
+    <h3>Adattábla (középen)</h3>
+    <p>Az adatok oszlopokban jelennek meg. Minden oszlopfejlécben egy kis <strong>beviteli mező</strong> (szűrődoboz) is látható — ebbe írva szűrheted a listát (részletek a 3. fejezetben). A fejlécre kattintva az adott oszlop szerint rendezheted a listát.</p>
+
+    <p>Az oszlopok alapértelmezetten:</p>
+    <div class="col-list">
+      <span class="col-pill">Lemez sorszám</span>
+      <span class="col-pill">Track</span>
+      <span class="col-pill">Előadó neve</span>
+      <span class="col-pill">Zeneszám címe</span>
+      <span class="col-pill">Hossz</span>
+      <span class="col-pill">Stílus</span>
+      <span class="col-pill">Kiadó</span>
+      <span class="col-pill">CD Cím</span>
+      <span class="col-pill">Beérk. dátum</span>
+      <span class="col-pill">Lej. dátum</span>
+      <span class="col-pill">Lej. idő</span>
+    </div>
+
+    <h3>Állapotsor (alul)</h3>
+    <p>Megmutatja, hogy éppen hány sor látható a szűrés után, és összesen hány sor van a táblában. Pl.: <em>„142 / 3580 sor"</em> azt jelenti, hogy 3580 sorból 142 felel meg a szűrési feltételeknek.</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 3 -->
+  <section id="szures">
+    <h2>3 · Keresés és szűrés</h2>
+
+    <p>Minden oszlopfejléc alatt egy kis beviteli mező található. Bármelyikbe beírva azonnal szűrődik a lista — nem kell Enter-t nyomni.</p>
+
+    <h3>Szöveg szerinti szűrés (Előadó, Cím, Stílus, Kiadó, CD Cím stb.)</h3>
+
+    <table>
+      <tr>
+        <th>Amit beírsz</th>
+        <th>Amit megkeres</th>
+        <th>Példa</th>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">rock</span></td>
+        <td>Azok a sorok, ahol az oszlop <strong>tartalmazza</strong> a „rock" szót</td>
+        <td>„hard rock", „rock ballada"</td>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">rock ballada</span></td>
+        <td>Ahol a „rock" <strong>és</strong> a „ballada" is szerepel (szóköz = ÉS kapcsolat)</td>
+        <td>„rock ballada", „slow rock ballada"</td>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">(rock</span></td>
+        <td>Ahol az oszlop <strong>„rock"-kal kezdődik</strong></td>
+        <td>„rock and roll", „rockabilly"</td>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">roll)</span></td>
+        <td>Ahol az oszlop <strong>„roll"-ra végződik</strong></td>
+        <td>„rock and roll"</td>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">(rock and roll)</span></td>
+        <td>Ahol az oszlop <strong>pontosan ezt a kifejezést tartalmazza</strong> (pontos szórészlet)</td>
+        <td>„rock and roll music"</td>
+      </tr>
+    </table>
+
+    <div class="tip"><strong>Tipp:</strong> A szűrési szintaxis gombokkal (<span class="btn btn-dark" style="font-size:11px">(szó eleje</span> <span class="btn btn-dark" style="font-size:11px">szó vége)</span> <span class="btn btn-dark" style="font-size:11px">(szó a helyén)</span>) a zárójelet egyetlen kattintással hozzá- vagy elveheted az éppen aktív szűrőmezőből.</div>
+
+    <h3>Szám szerinti szűrés (Lemez, Track, Hossz)</h3>
+    <p>Ennél a három oszlopnál nemcsak szöveg szerint, hanem <strong>számértékek szerint</strong> is szűrhetsz:</p>
+
+    <table>
+      <tr>
+        <th>Amit beírsz</th>
+        <th>Eredmény</th>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">5</span></td>
+        <td>Pontosan 5-ös értékű sorok</td>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">&lt;10</span></td>
+        <td>10-nél kisebb értékű sorok</td>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">&gt;100</span></td>
+        <td>100-nál nagyobb értékű sorok</td>
+      </tr>
+      <tr>
+        <td><span class="filter-ex">&gt;3&lt;8</span></td>
+        <td>3-nál nagyobb ÉS 8-nál kisebb sorok (3 és 8 közé esők)</td>
+      </tr>
+    </table>
+
+    <p>A <strong>Hossz</strong> oszlopnál a percek:másodpercek formátum is működik szűréskor:</p>
+    <ul>
+      <li><span class="filter-ex">3:45</span> — pontosan 3 perc 45 másodperces dalok</li>
+      <li><span class="filter-ex">&gt;3:00&lt;5:00</span> — 3 és 5 perc közötti dalok</li>
+    </ul>
+
+    <h3>Szűrők törlése</h3>
+    <ul>
+      <li><strong>Egy szűrő törlése:</strong> kattints a szűrőmezőbe és töröld ki, <em>vagy</em> nyomd meg az <span class="key">Esc</span> gombot — a mező kiürül, a fókusz visszakerül a táblára.</li>
+      <li><strong>Összes szűrő törlése:</strong> kattints a <span class="btn btn-grey">Szűrők törlése</span> gombra.</li>
+      <li><strong>F12 billentyűvel:</strong> törli az összes szűrőt és rendezést, a kurzor az aktuális sornál marad.</li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 4 -->
+  <section id="rendezes">
+    <h2>4 · Rendezés</h2>
+
+    <p>A listát bármelyik oszlop szerint rendezheted — növekvő vagy csökkenő sorrendbe.</p>
+
+    <h3>Rendezés oszlopfejlécre kattintva</h3>
+    <p>Kattints rá az oszlop fejlécére. Az első kattintás növekvő sorrendet (<strong>▲</strong>), a második csökkenő sorrendet (<strong>▼</strong>) állít be, a harmadik ismét növekvőt.</p>
+
+    <h3>Rendezés billentyűkkel</h3>
+    <table>
+      <tr><th>Billentyű</th><th>Rendezési oszlop</th></tr>
+      <tr><td><span class="key">F1</span></td><td>Lemez sorszám</td></tr>
+      <tr><td><span class="key">F2</span></td><td>Track</td></tr>
+      <tr><td><span class="key">F3</span></td><td>Előadó neve</td></tr>
+      <tr><td><span class="key">F4</span></td><td>Zeneszám címe</td></tr>
+      <tr><td><span class="key">F5</span></td><td>Hossz</td></tr>
+      <tr><td><span class="key">F6</span></td><td>Stílus</td></tr>
+      <tr><td><span class="key">F7</span></td><td>Kiadó</td></tr>
+      <tr><td><span class="key">F8</span></td><td>CD Cím</td></tr>
+    </table>
+
+    <h3>F11 — „Rendezés ide, szűrők törlése"</h3>
+    <p>Ha egy cellán állsz és megnyomod az <span class="key">F11</span> gombot, a program <strong>törli az összes szűrőt</strong> és az aktuális oszlop szerint rendez. A kurzor az eredeti soron marad, középre görget. Nagyon hasznos, ha gyorsan szeretnéd látni az adott oszlop összes értékét rendezve.</p>
+
+    <h3>F12 — „Mindent tisztáz, kurzor marad"</h3>
+    <p>Az <span class="key">F12</span> gomb <strong>törli az összes szűrőt és rendezést</strong> (visszaáll az alap Lemez+Track rend), de a kurzor az aktuális sornál marad, a sor középre görget.</p>
+
+    <h3>Automatikus F11 (nyílgombokra)</h3>
+    <p>Ha az <strong>„Automatikus F11: ↔"</strong> jelölőnégyzet be van pipálva, a bal/jobb nyíl gombbal való oszlopváltáskor a lista automatikusan az új oszlop szerint rendeződik (szűrők törlésével). Hasznos, ha gyorsan szeretnél végigpásztázni az egyes oszlopok szerint rendezett nézeten.</p>
+
+    <h3>Másodlagos rendezés</h3>
+    <p>Minden rendezésnél a program <strong>automatikusan Lemez+Track szerint rendezi a holtpontokat</strong> — vagyis azonos értékű soroknál mindig a lemezszám, azon belül a track szám dönt, így a listán belüli sorrend mindig következetes.</p>
+
+    <div class="tip"><strong>Tipp:</strong> A fejlécben az aktív rendezési oszlop melletti kis szürkébb <strong>▲</strong> jelzi a Lemez+Track másodlagos rendezést is.</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 5 -->
+  <section id="oszlopok">
+    <h2>5 · Oszlopok kezelése</h2>
+
+    <h3>Oszlopok megjelenítése / elrejtése</h3>
+    <p>Kattints az <span class="btn btn-grey">Oszlopok ▾</span> gombra. Egy kis panel nyílik meg, ahol pipákkal szabályozhatod, hogy melyik oszlop legyen látható. Alapértelmezetten a <em>Beérk. dátum</em>, <em>Lej. dátum</em> és <em>Lej. idő</em> oszlopok el vannak rejtve — ha szükséges, itt bekapcsolhatod őket.</p>
+
+    <h3>Oszlopok sorrendjének megváltoztatása</h3>
+    <p>Fogj meg egy oszlopfejlécet, és húzd a kívánt helyre. Az oszlop új pozíciójában marad.</p>
+
+    <h3>Oszlopszélesség módosítása</h3>
+    <p>Vidd az egeret két oszlopfejléc határára — a kurzor kétirányú nyíllá változik. Húzd balra vagy jobbra a szélességet.</p>
+
+    <div class="note"><strong>Automatikus mentés:</strong> Az oszlopok sorrendje, szélessége és láthatósága <strong>automatikusan el van mentve</strong>. A program bezárásakor a beállítások fájlba kerülnek, és legközelebb pontosan ugyanúgy nyílik meg a táblázat.</div>
+
+    <h3>Sorok háttérszíne</h3>
+    <p>Kattints a <span class="btn btn-grey">■ Háttérszín</span> gombra (bal oldalán egy kis színes négyzet látható). Megnyílik a Windows színválasztó ablaka — válaszd ki a kívánt színt, majd kattints az <em>OK</em> gombra. A változtatott szín szintén automatikusan meg van mentve.</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 6 -->
+  <section id="szerkesztes">
+    <h2>6 · Szerkesztés mód — meglévő adatok módosítása</h2>
+
+    <p>A szerkesztési módba lépve megváltoztathatod a meglévő rekordokat, vagy törölheted azokat.</p>
+
+    <h3>Belépés a szerkesztési módba</h3>
+    <p>Kattints az <strong>„Editálás"</strong> jelölőnégyzetre (piros szöveg). A következők történnek:</p>
+    <ul>
+      <li>Megjelenik a <span class="btn btn-green">Mentés</span> és a <span class="btn btn-red">Mégse</span> gomb</li>
+      <li>A tábla bal oldalán megjelenik egy <strong>✕ oszlop</strong> — itt jelölheted törlésre a sorokat</li>
+      <li>Az „Automatikus F11" jelölőnégyzet kikapcsol (szerkesztés közben nem rendez automatikusan)</li>
+    </ul>
+
+    <h3>Adatok módosítása</h3>
+    <p>Kattints bármelyik cellára — a cella szerkeszthetővé válik, megjelenik a szövegkurzor. Írj, töröld, módosítsd az értéket. Lépj tovább a következő cellára:</p>
+    <ul>
+      <li><span class="key">Tab</span> — következő cella jobbra</li>
+      <li><span class="key">Enter</span> — következő sor ugyanabba az oszlopba</li>
+      <li>Egérkattintással is bármelyik más cellára léphetsz</li>
+    </ul>
+
+    <h3>Sor törlésre jelölése</h3>
+    <p>A bal szélső <strong>✕</strong> cellába kattintva a sor <strong>törlésre jelöltté</strong> válik — piros háttér és dőlt betű jelzi:</p>
+    <div style="margin: 8px 0 12px 0;">
+      <div class="demo-row-norm">80001 &nbsp;·&nbsp; 3 &nbsp;·&nbsp; Kovács János &nbsp;·&nbsp; Szép nap volt</div><br>
+      <div class="demo-row-del">✕ &nbsp; 80001 &nbsp;·&nbsp; 4 &nbsp;·&nbsp; Kovács János &nbsp;·&nbsp; Ezt töröljük</div>
+    </div>
+    <p>Ha meggondolod magad, kattints ismét a ✕ cellára — a jelölés eltűnik, a sor visszaáll normálisra.</p>
+
+    <h3>Mentés</h3>
+    <p>Ha kész a szerkesztéssel, kattints a <span class="btn btn-green">Mentés</span> gombra. Mielőtt az adatbázisba kerülnek az adatok, a program <strong>megmutatja az összes változtatást</strong> egy külön ablakban:</p>
+    <ul>
+      <li><strong>Sárga sorok</strong> — módosított rekordok</li>
+      <li><strong>Piros sorok</strong> — törlésre jelölt rekordok</li>
+    </ul>
+    <p>Átnézed a listát, majd:</p>
+    <ul>
+      <li><span class="btn btn-green">Mentés</span> — véglegesíti a változtatásokat az adatbázisban</li>
+      <li><span class="btn btn-grey">Mégse</span> — visszatér szerkesztéshez, semmi sem változik</li>
+    </ul>
+
+    <h3>Szerkesztés visszavonása</h3>
+    <p>Ha inkább elveted az összes változtatást, kattints a <span class="btn btn-red">Mégse</span> gombra az eszköztárban. A program megerősítést kér, majd visszaállítja az eredeti adatokat.</p>
+
+    <div class="warn"><strong>Figyelem:</strong> A Mentés gombra kattintás után a módosítások az adatbázisba kerülnek — ez nem visszavonható. Mindig nézd át a megerősítő ablakban a változtatásokat, mielőtt véglegesíted!</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 7 -->
+  <section id="ujsor">
+    <h2>7 · Új sorok hozzáadása</h2>
+
+    <p>Kattints az <span class="btn btn-blue">Új sor ＋</span> gombra. Megnyílik az <em>„Új sorok hozzáadása"</em> ablak.</p>
+
+    <h3>Adatok bevitele</h3>
+    <p>Az ablakban egy üres táblázat látható. Kattints bármelyik cellára és kezdd el gépelni az adatokat. A program segít:</p>
+    <ul>
+      <li>Az <strong>új sor Track száma automatikusan eggyel nő</strong> az előző sorhoz képest</li>
+      <li>A <strong>Lemez sorszám automatikusan másolódik</strong> az előző sorból</li>
+      <li>Mihelyt elkezdeted kitölteni az aktuális sort, <strong>automatikusan megjelenik egy új üres sor</strong> alatta — nem kell kézzel hozzáadni</li>
+    </ul>
+
+    <h3>Sor törlése (bevitel közben)</h3>
+    <p>Ha elrontottál egy sort, kattints a bal szélső <strong>✕</strong> gombra — a sor azonnal törlődik az ablakból (az adatbázisba még nem kerül be, hiszen még nem mentettél).</p>
+
+    <h3>A Hossz (időtartam) mező formátuma</h3>
+    <p>A dal hosszát háromféleképpen adhatod meg:</p>
+    <ul>
+      <li><strong>Másodpercek:</strong> <span class="filter-ex">225</span> (225 másodperc = 3 perc 45 mp)</li>
+      <li><strong>Perc:másodperc:</strong> <span class="filter-ex">3:45</span></li>
+      <li><strong>Óra:perc:másodperc:</strong> <span class="filter-ex">1:03:45</span></li>
+    </ul>
+
+    <h3>Mentés</h3>
+    <p>Ha kész az összes sor, kattints a <span class="btn btn-green">Mentés</span> gombra. A program előbb ellenőrzi:</p>
+    <ul>
+      <li>Nincs-e már az adatbázisban ugyanolyan Lemez+Track kombináció (duplikáció ellenőrzés)</li>
+      <li>A Hossz mező megfelelő számformátumban van-e kitöltve</li>
+    </ul>
+    <p>Ha minden rendben, megerősítést kér, majd menti az adatokat. A <strong>főablak automatikusan frissül</strong> — és fontos: <strong>az aktuális szűrők és rendezés megmaradnak</strong>. Ha az új sor megfelel a beállított szűrőnek, azonnal megjelenik a listában.</p>
+
+    <h3>Bezárás mentés nélkül</h3>
+    <p>Ha az ablakot kitöltött sorokkal próbálod bezárni a <span class="btn btn-grey">Bezárás</span> gombbal (vagy az ablak X gombjával), a program megkérdezi, hogy valóban el akarod-e vetni a beírt adatokat.</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 8 -->
+  <section id="parancsok">
+    <h2>8 · Billentyűparancsok összefoglalója</h2>
+
+    <h3>Navigáció a táblában</h3>
+    <div class="shortcut-grid">
+      <div class="sc-row"><span class="sc-key"><span class="key">↑</span> <span class="key">↓</span></span><span class="sc-desc">Előző / következő sor</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">←</span> <span class="key">→</span></span><span class="sc-desc">Előző / következő oszlop</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">PgUp</span></span><span class="sc-desc">Egy oldalt felfelé</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">PgDn</span></span><span class="sc-desc">Egy oldalt lefelé</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">Home</span></span><span class="sc-desc">Az oszlop elejére ugrik (szerkesztéskor)</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">End</span></span><span class="sc-desc">Az oszlop végére ugrik (szerkesztéskor)</span></div>
+    </div>
+
+    <h3>Rendezés</h3>
+    <div class="shortcut-grid">
+      <div class="sc-row"><span class="sc-key"><span class="key">F1</span></span><span class="sc-desc">Rendezés: Lemez sorszám</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F2</span></span><span class="sc-desc">Rendezés: Track</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F3</span></span><span class="sc-desc">Rendezés: Előadó neve</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F4</span></span><span class="sc-desc">Rendezés: Zeneszám címe</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F5</span></span><span class="sc-desc">Rendezés: Hossz</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F6</span></span><span class="sc-desc">Rendezés: Stílus</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F7</span></span><span class="sc-desc">Rendezés: Kiadó</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F8</span></span><span class="sc-desc">Rendezés: CD Cím</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F11</span></span><span class="sc-desc">Szűrők törlése + rendezés az aktuális oszlop szerint, kurzor marad</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F12</span></span><span class="sc-desc">Mindent töröl (szűrők + rendezés), kurzor marad</span></div>
+    </div>
+
+    <h3>Szűrők</h3>
+    <div class="shortcut-grid">
+      <div class="sc-row"><span class="sc-key"><span class="key">Esc</span> <em>szűrőmezőben</em></span><span class="sc-desc">A szűrőmező tartalmát törli, fókusz visszamegy a táblára</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">Enter</span> / <span class="key">↓</span> <em>szűrőmezőben</em></span><span class="sc-desc">Fókusz a táblára ugrik</span></div>
+    </div>
+
+    <h3>Szerkesztés módban</h3>
+    <div class="shortcut-grid">
+      <div class="sc-row"><span class="sc-key"><span class="key">Tab</span></span><span class="sc-desc">Következő cella szerkesztése jobbra</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">Enter</span></span><span class="sc-desc">Következő sor ugyanabba az oszlopba</span></div>
+      <div class="sc-row"><span class="sc-key"><span class="key">F11</span> / <span class="key">F12</span></span><span class="sc-desc">Szerkesztés közben is működik</span></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ 9 -->
+  <section id="tippek">
+    <h2>9 · Hasznos tippek</h2>
+
+    <h3>Hogyan keressük meg gyorsan az összes dalt egy előadótól?</h3>
+    <ol class="steps">
+      <li>Kattints az <strong>Előadó neve</strong> oszlop szűrőmezőjébe</li>
+      <li>Írd be az előadó nevét (vagy annak egy részét)</li>
+      <li>A lista azonnal szűrődik — csak a találatok jelennek meg</li>
+      <li>Nyomd meg az <span class="key">F1</span> billentyűt, hogy lemez+track sorrendbe rendezze</li>
+    </ol>
+
+    <h3>Hogyan nézzük meg, mi van egy adott lemezen?</h3>
+    <ol class="steps">
+      <li>Kattints a <strong>Lemez sorszám</strong> oszlop szűrőmezőjébe</li>
+      <li>Írd be a lemez számát, pl. <span class="filter-ex">80001</span></li>
+      <li>Csak az adott lemez számai látszanak, Track sorrendben</li>
+    </ol>
+
+    <h3>Hogyan keressük meg a rövidebb/hosszabb dalokat?</h3>
+    <ol class="steps">
+      <li>Kattints a <strong>Hossz</strong> oszlop szűrőmezőjébe</li>
+      <li>Pl. <span class="filter-ex">&gt;4:00</span> — csak a 4 percnél hosszabb dalok</li>
+      <li>Vagy <span class="filter-ex">&gt;3:00&lt;5:00</span> — a 3–5 perc közöttiek</li>
+    </ol>
+
+    <h3>Hogyan módosítsunk egyszerre több sort?</h3>
+    <ol class="steps">
+      <li>Kapcsold be az <strong>Editálás</strong> módot</li>
+      <li>Használd a szűrőket, hogy csak a releváns sorok legyenek láthatók</li>
+      <li>Menj végig a sorokon és módosítsd a szükséges cellákat</li>
+      <li>Ha végzel, kattints a <span class="btn btn-green">Mentés</span> gombra</li>
+      <li>Ellenőrizd a megerősítő ablakban a változtatásokat, majd erősítsd meg</li>
+    </ol>
+
+    <h3>Hogyan rendezzük el az oszlopokat kedvünk szerint?</h3>
+    <p>Fogd meg az oszlopfejlécet és húzd a kívánt helyre. A program megjegyzi az új sorrendet — legközelebb is ugyanúgy jelenik meg.</p>
+
+    <h3>Az ablakot bezárhatom mentés közben is?</h3>
+    <p>Ha az Új sorok ablakban (Új sor ＋) kitöltött sorok vannak és bezárod az ablakot, a program figyelmeztet, és megkérdezi, hogy valóban elveted-e a nem mentett adatokat. Hasonlóan, ha szerkesztési módban nem mentett változtatások vannak.</p>
+
+    <div class="tip"><strong>Általános tipp:</strong> Az állapotsor alul mindig megmutatja, hány sor látható a szűrés után. Ha üres listát kapsz, valószínűleg van valamelyik szűrőmezőben szöveg — nyomd meg a <span class="btn btn-grey" style="font-size:11px">Szűrők törlése</span> gombot.</div>
+  </section>
+
+</div>
+</body>
+</html>

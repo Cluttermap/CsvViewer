@@ -50,6 +50,13 @@ public partial class MainWindow : Window
             await AddTab(table, dlg.FileName);
     }
 
+    private void BtnHelp_Click(object sender, RoutedEventArgs e)
+    {
+        var manual = Path.Combine(AppContext.BaseDirectory, "kezikonyv.html");
+        if (File.Exists(manual))
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(manual) { UseShellExecute = true });
+    }
+
     private void BtnCloseDb_Click(object sender, RoutedEventArgs e)
     {
         int idx = dbSelector.SelectedIndex;

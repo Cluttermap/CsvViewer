@@ -21,6 +21,7 @@ public partial class CsvTabView : UserControl
     {
         public Dictionary<string, double> ColumnWidths  { get; set; } = [];
         public List<string>               HiddenColumns { get; set; } = ["BeerkDat", "LejDat", "LejIdo"];
+        public List<string>               ColumnOrder   { get; set; } = [];
     }
 
     private static UiSettings _settings = LoadSettings();
@@ -69,8 +70,9 @@ public partial class CsvTabView : UserControl
     public CsvTabView()
     {
         InitializeComponent();
-        _initialized = true;
-        DataContext = _vm;
+        _initialized  = true;
+        _deleteColumn = dataGrid.Columns[0];   // delete column is always index 0
+        DataContext   = _vm;
 
         AddHandler(GotFocusEvent, new RoutedEventHandler((s, e) =>
         {
@@ -94,6 +96,7 @@ public partial class CsvTabView : UserControl
     private void OnViewLoaded(object sender, RoutedEventArgs e)
     {
         ApplyColumnWidths();
+        ApplyColumnOrder();
         ApplyColumnVisibility();
         SyncColumnSelectorCheckboxes();
         ApplyRowColors();
@@ -140,6 +143,20 @@ public partial class CsvTabView : UserControl
         }
     }
 
+    private void ApplyColumnOrder()
+    {
+        if (_settings.ColumnOrder.Count == 0) return;
+        // Assign DisplayIndex in saved order, starting at 1 (index 0 is the delete column).
+        // Setting indexes low-to-high avoids WPF range-validation errors.
+        int next = 1;
+        foreach (var key in _settings.ColumnOrder)
+        {
+            var col = dataGrid.Columns.OfType<DataGridBoundColumn>()
+                .FirstOrDefault(c => BindingPath(c) == key);
+            if (col is not null) col.DisplayIndex = next++;
+        }
+    }
+
     private void SaveColumnWidths()
     {
         try
@@ -152,7 +169,15 @@ public partial class CsvTabView : UserControl
                 if (key is not null)
                     _settings.ColumnWidths[key] = col.ActualWidth;
             }
-            if (!anyInvalid) SaveSettings();
+            if (!anyInvalid)
+            {
+                _settings.ColumnOrder = dataGrid.Columns.OfType<DataGridBoundColumn>()
+                    .OrderBy(c => c.DisplayIndex)
+                    .Select(c => BindingPath(c))
+                    .Where(k => k is not null)
+                    .ToList()!;
+                SaveSettings();
+            }
         }
         catch { }
     }
@@ -327,8 +352,19 @@ public partial class CsvTabView : UserControl
 
     // ── Toolbar buttons ───────────────────────────────────────────────────
 
-    private void BtnClear_Click(object sender, RoutedEventArgs e)     => _vm.ClearAllFilters();
-    private void BtnClearSort_Click(object sender, RoutedEventArgs e) => _vm.ClearSortOnly();
+    private void BtnClear_Click(object sender, RoutedEventArgs e)
+    {
+        dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+        _vm.ClearAllFilters();
+    }
+
+    private void BtnClearSort_Click(object sender, RoutedEventArgs e)
+    {
+        dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+        _vm.ClearSortOnly();
+    }
 
     private void BtnNew_Click(object sender, RoutedEventArgs e)
     {
@@ -336,7 +372,7 @@ public partial class CsvTabView : UserControl
         string tbl = _vm.CurrentTable;
         string db  = _vm.CurrentDbPath;
         var win = new UjSorWindow(tbl, db);
-        win.RowsSaved += async () => await _vm.LoadTableAsync(tbl, db);
+        win.RowsSaved += async () => await _vm.RefreshTableAsync(tbl, db);
         win.Owner = Window.GetWindow(this);
         win.Show();
     }
@@ -378,7 +414,7 @@ public partial class CsvTabView : UserControl
     {
         if (e.OriginalSource is TextBox) return;
         if (sender is not DataGridColumnHeader { Column: not null } header) return;
-        int col = dataGrid.Columns.IndexOf(header.Column) + 1;
+        int col = dataGrid.Columns.IndexOf(header.Column);
         if (col >= 1 && col <= 11) DoSort(col);
     }
 
@@ -386,6 +422,13 @@ public partial class CsvTabView : UserControl
 
     private void FilterBox_KeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.F11)
+        {
+            e.Handled = true;
+            if (dataGrid.CurrentColumn is not null && dataGrid.CurrentItem is not null)
+                DoF11(dataGrid.CurrentColumn, dataGrid.CurrentItem);
+            return;
+        }
         if (e.Key == Key.F12)
         {
             e.Handled = true;
@@ -409,8 +452,7 @@ public partial class CsvTabView : UserControl
 
     private void DataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (Keyboard.FocusedElement is TextBox) return;
-
+        // F11 and F12 work even while editing a cell
         if (e.Key == Key.F11)
         {
             e.Handled = true;
@@ -419,6 +461,16 @@ public partial class CsvTabView : UserControl
             return;
         }
 
+        if (e.Key == Key.F12)
+        {
+            e.Handled = true;
+            DoClearAndStay();
+            return;
+        }
+
+        // Sort keys (F1–F8) and AutoF11 are skipped while typing in a cell editor
+        if (Keyboard.FocusedElement is TextBox) return;
+
         if (chkAutoF11.IsChecked == true && (e.Key == Key.Left || e.Key == Key.Right))
         {
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
@@ -426,13 +478,6 @@ public partial class CsvTabView : UserControl
                 if (dataGrid.CurrentColumn is not null && dataGrid.CurrentItem is not null)
                     DoF11(dataGrid.CurrentColumn, dataGrid.CurrentItem);
             });
-            return;
-        }
-
-        if (e.Key == Key.F12)
-        {
-            e.Handled = true;
-            DoClearAndStay();
             return;
         }
 
@@ -449,6 +494,9 @@ public partial class CsvTabView : UserControl
 
     private void DoClearAndStay()
     {
+        dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
         object?         currentItem   = dataGrid.CurrentItem;
         DataGridColumn? currentColumn = dataGrid.CurrentColumn;
 
@@ -468,8 +516,11 @@ public partial class CsvTabView : UserControl
 
     private void DoF11(DataGridColumn column, object item)
     {
-        int colIdx = dataGrid.Columns.IndexOf(column) + 1;
+        int colIdx = dataGrid.Columns.IndexOf(column);
         if (colIdx < 1 || colIdx > 11) return;
+
+        dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
         _vm.ClearFiltersOnly();
         _vm.SortByColumn(colIdx);
@@ -486,6 +537,9 @@ public partial class CsvTabView : UserControl
 
     private void DoSort(int col)
     {
+        dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
         object?         currentItem   = dataGrid.CurrentItem;
         DataGridColumn? currentColumn = dataGrid.CurrentColumn;
 
@@ -608,6 +662,18 @@ public partial class CsvTabView : UserControl
 
     private Dictionary<long, CsvRowSnapshot>? _editSnapshot;
     private bool _isEditMode;
+    private bool _autoF11BeforeEdit;
+    private DataGridColumn? _deleteColumn;
+
+    private void DataGrid_RowEditEnding(object? sender, DataGridRowEditEndingEventArgs e)
+    {
+        if (!_isEditMode || e.EditAction != DataGridEditAction.Commit) return;
+        // Defer a guarded refresh so the committed row re-sorts/re-filters.
+        // Do NOT CommitEdit here: by the time Background fires, Input-priority
+        // CurrentCellChanged has already called BeginEdit on the next cell, so
+        // CommitEdit would kill that new edit instead of the old one.
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, _vm.RefreshView);
+    }
 
     private void DataGrid_CurrentCellChanged(object? sender, EventArgs e)
     {
@@ -630,6 +696,10 @@ public partial class CsvTabView : UserControl
             dataGrid.IsReadOnly    = false;
             btnSave.Visibility   = Visibility.Visible;
             btnCancel.Visibility = Visibility.Visible;
+            _autoF11BeforeEdit       = chkAutoF11.IsChecked == true;
+            chkAutoF11.IsChecked     = false;
+            chkAutoF11.IsEnabled     = false;
+            if (_deleteColumn != null) _deleteColumn.Visibility = Visibility.Visible;
         }
         else
         {
@@ -639,15 +709,54 @@ public partial class CsvTabView : UserControl
 
     private async void BtnSave_Click(object sender, RoutedEventArgs e)
     {
-        var result = MessageBox.Show(
-            "Biztosan menteni szeretnéd a módosításokat az adatbázisba?",
-            "Mentés megerősítése",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-        if (result != MessageBoxResult.Yes) return;
+        if (_editSnapshot is null || _vm.CurrentTable is null || _vm.CurrentDbPath is null) return;
+
+        dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+        var changes = BuildChangeList();
+        if (changes.Count == 0)
+        {
+            MessageBox.Show("Nincs mentendő módosítás.", "Mentés",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var confirmWin = new ConfirmSaveWindow(changes) { Owner = Window.GetWindow(this) };
+        if (confirmWin.ShowDialog() != true) return;
 
         await SaveChangesAsync();
         ExitEditMode();
+    }
+
+    private List<PendingChange> BuildChangeList()
+    {
+        var list = new List<PendingChange>();
+        foreach (var row in _vm.GetAllRows())
+        {
+            if (row.IsMarkedForDelete)
+            {
+                list.Add(new PendingChange("Törlés",
+                    row.Disc.ToString(), row.Track.ToString(), row.Artist, row.Title,
+                    row.Duration, row.Info, row.Album, row.CdCim,
+                    row.BeerkDat, row.LejDat, row.LejIdo));
+            }
+            else if (_editSnapshot != null &&
+                     _editSnapshot.TryGetValue(row.RowId, out var snap) && IsDirty(row, snap))
+            {
+                list.Add(new PendingChange("Módosítás",
+                    row.Disc.ToString(), row.Track.ToString(), row.Artist, row.Title,
+                    row.Duration, row.Info, row.Album, row.CdCim,
+                    row.BeerkDat, row.LejDat, row.LejIdo));
+            }
+        }
+        return list;
+    }
+
+    private void DeleteRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.DataContext is not CsvRow row) return;
+        row.IsMarkedForDelete = !row.IsMarkedForDelete;
     }
 
     private void BtnCancel_Click(object sender, RoutedEventArgs e)
@@ -669,15 +778,25 @@ public partial class CsvTabView : UserControl
         _isEditMode          = false;
         _editSnapshot        = null;
         dataGrid.IsReadOnly  = true;
-        btnSave.Visibility   = Visibility.Collapsed;
-        btnCancel.Visibility = Visibility.Collapsed;
+        btnSave.Visibility   = Visibility.Hidden;
+        btnCancel.Visibility = Visibility.Hidden;
         chkEdit.IsChecked    = false;
+        chkAutoF11.IsEnabled = true;
+        chkAutoF11.IsChecked = _autoF11BeforeEdit;
+        if (_deleteColumn != null) _deleteColumn.Visibility = Visibility.Collapsed;
+        foreach (var row in _vm.GetAllRows()) row.IsMarkedForDelete = false;
     }
 
     private Dictionary<long, CsvRowSnapshot> TakeSnapshot()
-        => _vm.GetAllRows().ToDictionary(r => r.RowId, r => new CsvRowSnapshot(
-            r.RowId, r.Disc, r.Track, r.Artist, r.Title,
-            r.Duration, r.Info, r.Album, r.CdCim, r.BeerkDat, r.LejDat, r.LejIdo));
+    {
+        var dict = new Dictionary<long, CsvRowSnapshot>();
+        foreach (var r in _vm.GetAllRows())
+            if (r.RowId != 0)
+                dict.TryAdd(r.RowId, new CsvRowSnapshot(
+                    r.RowId, r.Disc, r.Track, r.Artist, r.Title,
+                    r.Duration, r.Info, r.Album, r.CdCim, r.BeerkDat, r.LejDat, r.LejIdo));
+        return dict;
+    }
 
     private void RevertToSnapshot()
     {
@@ -695,7 +814,8 @@ public partial class CsvTabView : UserControl
             row.CdCim    = snap.CdCim;
             row.BeerkDat = snap.BeerkDat;
             row.LejDat   = snap.LejDat;
-            row.LejIdo   = snap.LejIdo;
+            row.LejIdo          = snap.LejIdo;
+            row.IsMarkedForDelete = false;
         }
     }
 
@@ -705,15 +825,24 @@ public partial class CsvTabView : UserControl
         dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
         dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
-        var dirty = _vm.GetAllRows()
-            .Where(r => _editSnapshot.TryGetValue(r.RowId, out var snap) && IsDirty(r, snap))
-            .ToList();
-
-        if (dirty.Count == 0) return;
-
         string table = _vm.CurrentTable;
         string db    = _vm.CurrentDbPath;
-        await Task.Run(() => WriteToDb(dirty, table, db));
+
+        var dirty = _vm.GetAllRows()
+            .Where(r => !r.IsMarkedForDelete &&
+                        _editSnapshot.TryGetValue(r.RowId, out var snap) && IsDirty(r, snap))
+            .ToList();
+        if (dirty.Count > 0)
+            await Task.Run(() => WriteToDb(dirty, table, db));
+
+        var toDelete = _vm.GetAllRows()
+            .Where(r => r.IsMarkedForDelete && r.RowId != 0)
+            .ToList();
+        if (toDelete.Count > 0)
+        {
+            await Task.Run(() => { foreach (var r in toDelete) DeleteRowFromDb(r.RowId, table, db); });
+            foreach (var r in toDelete) _vm.RemoveRow(r);
+        }
     }
 
     private static bool IsDirty(CsvRow r, CsvRowSnapshot s)

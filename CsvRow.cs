@@ -40,6 +40,13 @@ public class CsvRow : INotifyPropertyChanged
     private string _lejIdo = "";
     public string LejIdo { get => _lejIdo; set { _lejIdo = value; OnPropertyChanged(); } }
 
+    private bool _isMarkedForDelete;
+    public bool IsMarkedForDelete
+    {
+        get => _isMarkedForDelete;
+        set { _isMarkedForDelete = value; OnPropertyChanged(); }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? n = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
